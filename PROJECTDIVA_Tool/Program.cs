@@ -15,30 +15,47 @@ namespace PROJECTDIVA_Tool
         
         public static void MainMenu(int code)
         {
+            if (code == 8)
+                Console.WriteLine("\nThis isn't DIVAFILE.");
+            else if (code == 9)
+                Console.WriteLine("Ready.");
+            if (code != 0)
+                Console.Read();
             Console.Clear();
-            ConsoleDesign(1);
-            string[] Text = new string[11];
-            Text[0] = "PROJECTDIVA_Tool";
-            Text[1] = "";
-            Text[2] = "1. Extract FARC Archive";
-            Text[3] = "2. Create FARC Archive";
-            Text[4] = "3. Decrypt DIVAFILE";
-            Text[5] = "4. Encrypt DIVAFILE";
-            Text[6] = "";
-            Text[7] = "";
-            Text[8] = "";
-            //Text[6] = "5. Parse F DSC";
-            //Text[7] = "6. Parse F2nd DSC";
-            //Text[8] = "7. Parse X DSC";
-            Text[9] = "";
-            Text[10] = "Q. Quit";
-            ConsoleText(1, Text);
-            ConsoleDesign(1);
 
-            if (code == 1)
-                Console.WriteLine("\nPlease choose an option\n");
-            else if (code == 2)
-                Console.WriteLine("\nThis isn't DIVAFILE.\n");
+            ConsoleDesign("Fill");
+            ConsoleDesign("               PROJECTDIVA_Tool");
+            ConsoleDesign("");
+            if (File.Exists("DIVALib.dll"))
+            {
+                ConsoleDesign("1. Extract FARC Archive");
+                ConsoleDesign("2. Create FARC Archive");
+            }
+            else
+            {
+                ConsoleDesign("DIVALibNotFound");
+                ConsoleDesign("DIVALibNotFound");
+            }
+            if (File.Exists("DIVAFILE_Tool.exe"))
+            {
+                ConsoleDesign("3. Decrypt DIVAFILE");
+                ConsoleDesign("4. Encrypt DIVAFILE");
+            }
+            else
+            {
+                ConsoleDesign("DIVAFILEToolNotFound");
+                ConsoleDesign("DIVAFILEToolNotFound");
+            }
+            ConsoleDesign("");
+            ConsoleDesign("");
+            ConsoleDesign("");
+            //ConsoleDesign("5. Parse F DSC");
+            //ConsoleDesign("6. Parse F2nd DSC");
+            //ConsoleDesign("7. Parse X DSC");
+            ConsoleDesign("");
+            ConsoleDesign("Q. Quit");
+            ConsoleDesign("Fill");
+            Console.WriteLine("\nPlease choose an option\n");
 
             string function = Console.ReadLine();
             bool isNumber = true;
@@ -59,23 +76,18 @@ namespace PROJECTDIVA_Tool
 
         }
 
-        public static void ConsoleDesign(int code)
+        public static void ConsoleDesign(string text)
         {
-            if (code == 1)
-                Console.WriteLine("████████████████████████████████████████████████");
-        }
-
-        public static void ConsoleText(int code, string[] text)
-        {
-            int i = 0;
-            if (code == 1)
-                foreach (string info in text)
-                {
-                    string Text = "█                                              █";
-                    Text = "█  " + info + Text.Remove(0, info.Length + 3);
-                    Console.WriteLine(Text);
-                    i++;
-                }
+            string Text = "█                                              █";
+            if (text == "Fill")
+                Text = "████████████████████████████████████████████████";
+            else if (text == "DIVALibNotFound")
+                Text = "█  DIVALib.dll not founded                     █";
+            else if (text == "DIVAFILEToolNotFound")
+                Text = "█  DIVAFILE_Tool.exe not founded               █";
+            else
+                Text = "█  " + text + Text.Remove(0, text.Length + 3);
+            Console.WriteLine(Text);
         }
 
         public static void Functions(int function)
@@ -101,8 +113,7 @@ namespace PROJECTDIVA_Tool
                     filein = file;
 
                 FARC(startuppath, startuppath + filein, "");
-                Ready();
-                MainMenu(1);
+                MainMenu(9);
             }
             else if (function == 3 || function == 4)
             {
@@ -122,7 +133,7 @@ namespace PROJECTDIVA_Tool
                         DIVAFILE("e", filein, fileout);
                     }
                     else
-                        MainMenu(2);
+                        MainMenu(8);
                 }
                 else if (function == 4)
                 {
@@ -131,15 +142,10 @@ namespace PROJECTDIVA_Tool
                     DIVAFILE("c", filein, fileout);
                 }
                 Console.WriteLine("{0} {1}", filein, fileout);
-                System.Threading.Thread.Sleep(250);
-                for (bool i = true; i;)
-                    if (File.Exists(fileout))
-                        i = false;
-                Ready();
+                MainMenu(9);
             }
             else
-                MainMenu(1);
-            Console.Read();
+                MainMenu(0);
         }
 
         public static string Choose(int code)
@@ -155,18 +161,19 @@ namespace PROJECTDIVA_Tool
         {
             string cli = crypt + " " + filein + " " + fileout;
             Console.WriteLine("DIVAFILE_Tool.exe {0}", cli);
-            Process.Start("DIVAFILE_Tool.exe", cli);
+            Process p = new Process();
+            p.StartInfo.UseShellExecute = false;
+            p.StartInfo.RedirectStandardOutput = true;
+            p.StartInfo.FileName = "DIVAFILE_Tool.exe";
+            p.StartInfo.Arguments = cli;
+            p.Start();
+            p.WaitForExit();
         }
 
         public static void FARC(string startuppath, string filein, string options)
         {
             Console.WriteLine("Starting module FARCPack.");
             Farc.FARCPack(startuppath, options + filein);
-        }
-
-        public static void Ready()
-        {
-            Console.WriteLine("Ready.");
         }
 
         public static void Exit()

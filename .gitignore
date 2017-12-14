@@ -1,2 +1,4 @@
-.vs
+build
+DIVALib/obj
+PROJECTDIVA_Tool/obj
 packages
