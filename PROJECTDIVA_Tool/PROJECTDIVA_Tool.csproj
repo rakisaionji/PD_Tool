@@ -62,6 +62,8 @@
     <Reference Include="System.Windows.Forms" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="classes\F2DSC.cs" />
+    <Compile Include="classes\XDSC.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="classes\FarcPack.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

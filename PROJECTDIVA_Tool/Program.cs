@@ -7,12 +7,11 @@ namespace PROJECTDIVA_Tool
     public class Program
     {
         [STAThread]
-
         static void Main(string[] args)
         {
             MainMenu(0);
         }
-        
+
         public static void MainMenu(int code)
         {
             if (code == 8)
@@ -21,6 +20,7 @@ namespace PROJECTDIVA_Tool
                 Console.WriteLine("Ready.");
             if (code != 0)
                 Console.Read();
+            string function = "";
             Console.Clear();
 
             ConsoleDesign("Fill");
@@ -47,17 +47,15 @@ namespace PROJECTDIVA_Tool
                 ConsoleDesign("DIVAFILEToolNotFound");
             }
             ConsoleDesign("");
-            ConsoleDesign("");
-            ConsoleDesign("");
             //ConsoleDesign("5. Parse F DSC");
-            //ConsoleDesign("6. Parse F2nd DSC");
-            //ConsoleDesign("7. Parse X DSC");
+            ConsoleDesign("6. Parse F2nd DSC");
+            ConsoleDesign("7. Parse X DSC");
             ConsoleDesign("");
             ConsoleDesign("Q. Quit");
             ConsoleDesign("Fill");
             Console.WriteLine("\nPlease choose an option\n");
 
-            string function = Console.ReadLine();
+            function = Console.ReadLine();
             bool isNumber = true;
 
             if (function == "")
@@ -98,54 +96,65 @@ namespace PROJECTDIVA_Tool
                 file = Choose(1);
             else if (function == 2)
                 file = Choose(2);
+            if (file.Equals(""))
+                MainMenu(0);
 
-            if (function == 1 || function == 2)
+            if (!File.Exists(file))
+                MainMenu(0);
+            else
             {
-                string startuppath = Directory.GetCurrentDirectory() + "\\";
-                Console.WriteLine("Source folder: {0}", startuppath);
-                if (function == 1)
-                    Console.WriteLine("File: {0}", file);
-                if (function == 2)
-                    Console.WriteLine("Folder: {0}", file);
-                if (file.Contains(startuppath))
-                    filein = file.Remove(0, startuppath.Length);
-                else
-                    filein = file;
-
-                FARC(startuppath, startuppath + filein, "");
-                MainMenu(9);
-            }
-            else if (function == 3 || function == 4)
-            {
-                string startuppath = Directory.GetCurrentDirectory() + "\\";
-                if (file.Contains(startuppath))
-                    filein = file.Remove(0, startuppath.Length);
-                else
-                    filein = file;
-
-                if (function == 3)
+                if (function == 1 || function == 2)
                 {
-                    string FILE = BitConverter.ToString(File.ReadAllBytes(filein));
-                    if (FILE.StartsWith("44-49-56-41-46-49-4C-45"))
+                    string startuppath = Directory.GetCurrentDirectory() + "\\";
+                    Console.WriteLine("Source folder: {0}", startuppath);
+                    if (function == 1)
+                        Console.WriteLine("File: {0}", file);
+                    if (function == 2)
+                        Console.WriteLine("Folder: {0}", file);
+                    if (file.Contains(startuppath))
+                        filein = file.Remove(0, startuppath.Length);
+                    else
+                        filein = file;
+
+                    FARC(startuppath, startuppath + filein, "");
+                    MainMenu(9);
+                }
+                else if (function == 3 || function == 4)
+                {
+                    string startuppath = Directory.GetCurrentDirectory() + "\\";
+                    if (file.Contains(startuppath))
+                        filein = file.Remove(0, startuppath.Length);
+                    else
+                        filein = file;
+
+                    if (function == 3)
+                    {
+                        string FILE = BitConverter.ToString(File.ReadAllBytes(filein));
+                        if (FILE.StartsWith("44-49-56-41-46-49-4C-45"))
+                        {
+                            string Extension = Path.GetExtension(file);
+                            fileout = filein.Replace(Extension, "_dec" + Extension);
+                            DIVAFILE("e", filein, fileout);
+                        }
+                        else
+                            MainMenu(8);
+                    }
+                    else if (function == 4)
                     {
                         string Extension = Path.GetExtension(file);
-                        fileout = filein.Replace(Extension, "_dec" + Extension);
-                        DIVAFILE("e", filein, fileout);
+                        fileout = filein.Replace(Extension, "_enc" + Extension);
+                        DIVAFILE("c", filein, fileout);
                     }
-                    else
-                        MainMenu(8);
+                    Console.WriteLine("{0} {1}", filein, fileout);
                 }
-                else if (function == 4)
-                {
-                    string Extension = Path.GetExtension(file);
-                    fileout = filein.Replace(Extension, "_enc" + Extension);
-                    DIVAFILE("c", filein, fileout);
-                }
-                Console.WriteLine("{0} {1}", filein, fileout);
-                MainMenu(9);
+                else if (function == 6)
+                    F2DSC.DSC(file);
+                else if (function == 7)
+                    XDSC.DSC(file);
+                else
+                    MainMenu(0);
             }
-            else
-                MainMenu(0);
+            MainMenu(9);
         }
 
         public static string Choose(int code)
