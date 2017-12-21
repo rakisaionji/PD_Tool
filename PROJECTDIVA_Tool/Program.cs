@@ -9,13 +9,19 @@ namespace PROJECTDIVA_Tool
         [STAThread]
         static void Main(string[] args)
         {
+            foreach (string arg in args)
+                if (arg.Contains("."))
+                    Functions(arg, "3", 1);
             MainMenu(0);
         }
 
         public static void MainMenu(int code)
         {
-            if (code == 8)
-                Console.WriteLine("\nThis isn't DIVAFILE.");
+
+            if (code == 7)
+                Console.WriteLine("This file isn't PVSC.");
+            else if(code == 8)
+                Console.WriteLine("This file isn't DIVAFILE, FARC Archive.");
             else if (code == 9)
                 Console.WriteLine("Ready.");
             if (code != 0)
@@ -53,7 +59,8 @@ namespace PROJECTDIVA_Tool
             ConsoleDesign("");
             ConsoleDesign("Q. Quit");
             ConsoleDesign("Fill");
-            Console.WriteLine("\nPlease choose an option\n");
+            Console.WriteLine("\n If the input of one digit or letter does not\n work, try to write them 2 times.");
+            Console.WriteLine("\n Please choose an option\n");
 
             function = Console.ReadLine();
             bool isNumber = true;
@@ -68,7 +75,7 @@ namespace PROJECTDIVA_Tool
             if (function.ToUpper() == "Q")
                 Exit();
             else if (isNumber)
-                Functions(Convert.ToInt32(function));
+                Functions("", function, 0);
             else
                 MainMenu(1);
 
@@ -88,14 +95,17 @@ namespace PROJECTDIVA_Tool
             Console.WriteLine(Text);
         }
 
-        public static void Functions(int function)
+        public static void Functions(string file, string function, int code)
         {
             Console.Clear();
-            string file = "", filein = "", fileout = "";
-            if (function != 2)
-                file = Choose(1);
-            else if (function == 2)
-                file = Choose(2);
+            string filein = "", fileout = "";
+            if (code == 0)
+            {
+                if (function != "2")
+                    file = Choose(1);
+                else if (function == "2")
+                    file = Choose(2);
+            }
             if (file.Equals(""))
                 MainMenu(0);
 
@@ -103,13 +113,13 @@ namespace PROJECTDIVA_Tool
                 MainMenu(0);
             else
             {
-                if (function == 1 || function == 2)
+                if (function == "1" || function == "2")
                 {
                     string startuppath = Directory.GetCurrentDirectory() + "\\";
                     Console.WriteLine("Source folder: {0}", startuppath);
-                    if (function == 1)
+                    if (function == "1")
                         Console.WriteLine("File: {0}", file);
-                    if (function == 2)
+                    if (function == "2")
                         Console.WriteLine("Folder: {0}", file);
                     if (file.Contains(startuppath))
                         filein = file.Remove(0, startuppath.Length);
@@ -117,44 +127,63 @@ namespace PROJECTDIVA_Tool
                         filein = file;
 
                     FARC(startuppath, startuppath + filein, "");
-                    MainMenu(9);
                 }
-                else if (function == 3 || function == 4)
+                else if (function == "3" || function == "4")
                 {
                     string startuppath = Directory.GetCurrentDirectory() + "\\";
+                    string Extension = Path.GetExtension(file);
                     if (file.Contains(startuppath))
                         filein = file.Remove(0, startuppath.Length);
                     else
                         filein = file;
-
-                    if (function == 3)
+                    switch (function)
                     {
-                        string FILE = BitConverter.ToString(File.ReadAllBytes(filein));
-                        if (FILE.StartsWith("44-49-56-41-46-49-4C-45"))
-                        {
-                            string Extension = Path.GetExtension(file);
-                            fileout = filein.Replace(Extension, "_dec" + Extension);
-                            DIVAFILE("e", filein, fileout);
-                        }
-                        else
-                            MainMenu(8);
-                    }
-                    else if (function == 4)
-                    {
-                        string Extension = Path.GetExtension(file);
-                        fileout = filein.Replace(Extension, "_enc" + Extension);
-                        DIVAFILE("c", filein, fileout);
+                        case "3":
+                            string FILE = BitConverter.ToString(File.ReadAllBytes(filein));
+                            string FILEstr = File.ReadAllText(filein);
+                            if (FILE.StartsWith("44-49-56-41-46-49-4C-45"))
+                            {
+                                fileout = filein.Replace(Extension, "_dec" + Extension);
+                                DIVAFILE("e", filein, fileout);
+                            }
+                            else if (FILEstr.ToUpper().StartsWith("FARC"))
+                                Functions(file, "1", 1);
+                            else
+                            {
+                                Console.WriteLine("This file isn't DIVAFILE or FARC Archive.");
+                                Console.Read();
+                            }
+                            break;
+                        case "4":
+                            fileout = filein.Replace(Extension, "_enc" + Extension);
+                            DIVAFILE("c", filein, fileout);
+                            break;
                     }
                     Console.WriteLine("{0} {1}", filein, fileout);
                 }
-                else if (function == 6)
-                    F2DSC.DSC(file);
-                else if (function == 7)
-                    XDSC.DSC(file);
+                else if (function == "6" || function == "7")
+                {
+                    string FILEstr = File.ReadAllText(file);
+                    if (FILEstr.ToUpper().StartsWith("PVSC"))
+                        switch (function)
+                        {
+                            case "6":
+                                F2DSC.DSC(file);
+                                break;
+                            case "7":
+                                XDSC.DSC(file);
+                                break;
+                        }
+                    else
+                        MainMenu(7);
+                }
                 else
                     MainMenu(0);
             }
-            MainMenu(9);
+            if (code == 0)
+                MainMenu(9);
+            else if (code == 1)
+                Exit();
         }
 
         public static string Choose(int code)

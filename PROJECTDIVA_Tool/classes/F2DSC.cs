@@ -1,10 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Globalization;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace PROJECTDIVA_Tool
 {
@@ -18,56 +14,86 @@ namespace PROJECTDIVA_Tool
         public static void Decoder(string file, int I)
         {
             Console.WriteLine("{0} notes", I);
-            string[] dsc = File.ReadAllLines(Path.ChangeExtension(file, ".txt"));
-            //File.Delete(Path.ChangeExtension(file, ".txt"));
+            string[] dsc = File.ReadAllLines(Path.ChangeExtension(file, "hex"));
 
-            uint[] StartID = new uint[I];
-            uint[] Timestamp = new uint[I];
-            uint[] StructOpcode = new uint[I];
+            //uint[] StartID = new uint[I];
+            double[] Timestamp = new double[I];
+            //uint[] StructOpcode = new uint[I];
             uint[] NoteType = new uint[I];
-            int[] HoldTimer = new int[I];
+            double[] HoldTimer = new double[I];
             int[] HoldEnd = new int[I];
-            uint[] XPos = new uint[I];
-            uint[] YPos = new uint[I];
-            int[] Angle1 = new int[I];
+            double[] XPos = new double[I];
+            double[] YPos = new double[I];
+            double[] Angle1 = new double[I];
             int[] WaveCount = new int[I];
-            int[] Angle2 = new int[I];
+            double[] Angle2 = new double[I];
             uint[] Amplitude = new uint[I];
-            uint[] NoteTimer = new uint[I];
-            uint[] UnknownVariable = new uint[I];
-            int[] EndInt = new int[I];
+            double[] NoteTimer = new double[I];
+            //uint[] UnknownVariable = new uint[I];
+            //int[] EndInt = new int[I];
             int I1 = 0;
-            string notes = "#Note: StartID, Timestamp, StructOpcode, NoteType, HoldTimer, HoldEnd, XPos, YPos, Angle1, " +
-                "WaveCount, Angle2, Amplitude, NoteTimer, UnknownVariable, EndInt"; 
+            string notes = ",timestamp,type,holdLength,bIsHoldEnd,posX,posY,entryAngle,oscillationFrequency,oscillationAngle," +
+                "oscillationAmplitude,timeout"; 
 
-            foreach (string DSC in dsc)
+            foreach (string DSCin in dsc)
             {
-                StartID[I1] = uint.Parse(DSC.Remove(8), NumberStyles.HexNumber);
-                Timestamp[I1] = uint.Parse(DSC.Remove(0, 8).Remove(8), NumberStyles.HexNumber);
-                StructOpcode[I1] = uint.Parse(DSC.Remove(0, 16).Remove(8), NumberStyles.HexNumber);
-                NoteType[I1] = uint.Parse(DSC.Remove(0, 24).Remove(8), NumberStyles.HexNumber);
-                HoldTimer[I1] = int.Parse(DSC.Remove(0, 32).Remove(8), NumberStyles.HexNumber);
-                HoldEnd[I1] = int.Parse(DSC.Remove(0, 40).Remove(8), NumberStyles.HexNumber);
-                XPos[I1] = uint.Parse(DSC.Remove(0, 48).Remove(8), NumberStyles.HexNumber);
-                YPos[I1] = uint.Parse(DSC.Remove(0, 56).Remove(8), NumberStyles.HexNumber);
-                Angle1[I1] = int.Parse(DSC.Remove(0, 64).Remove(8), NumberStyles.HexNumber);
-                WaveCount[I1] = int.Parse(DSC.Remove(0, 72).Remove(8), NumberStyles.HexNumber);
-                Angle2[I1] = int.Parse(DSC.Remove(0, 80).Remove(8), NumberStyles.HexNumber);
-                Amplitude[I1] = uint.Parse(DSC.Remove(0, 88).Remove(8), NumberStyles.HexNumber);
-                NoteTimer[I1] = uint.Parse(DSC.Remove(0, 96).Remove(8), NumberStyles.HexNumber);
-                UnknownVariable[I1] = uint.Parse(DSC.Remove(0, 104).Remove(8), NumberStyles.HexNumber);
-                EndInt[I1] = int.Parse(DSC.Remove(0, 112), NumberStyles.HexNumber);
-                Console.WriteLine("Note {0}: {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}, {13}, {14}, {15}",
-                    I1, StartID[I1], Timestamp[I1], StructOpcode[I1], NoteType[I1], HoldTimer[I1], HoldEnd[I1], XPos[I1],
-                    YPos[I1], Angle1[I1], WaveCount[I1], Angle2[I1], Amplitude[I1], NoteTimer[I1], UnknownVariable[I1],
-                    EndInt[I1]);
-                notes += "\nNote" + I1 + ": " + StartID[I1] + ", " + Timestamp[I1] + ", " + StructOpcode[I1] + ", " +
-                    NoteType[I1] + ", " + HoldTimer[I1] + ", " + HoldEnd[I1] + ", " + XPos[I1] + ", " + YPos[I1] +", " +
-                    Angle1[I1] + ", " + WaveCount[I1] + ", " + Angle2[I1] + ", " + Amplitude[I1] + ", " + NoteTimer[I1] + 
-                    ", " + UnknownVariable[I1] + ", " + EndInt[I1];
-                I1++;
+                if (DSCin.StartsWith("00000001"))
+                {
+                    string DSC = "", DSCout = "";
+                    bool BigEndian = false;
+                    for (int i = 1; i < 16; i++)
+                    {
+                        string DSCtemp = DSCin + "00000000";
+                        if (i == 1)
+                            DSCtemp = DSCtemp.Remove(8);
+                        else
+                            DSCtemp = DSCtemp.Remove(0, 8 * (i - 1)).Remove(8);
+
+                        if (DSCtemp.Contains("01000000") && !BigEndian)
+                            BigEndian = true;
+
+                        if (BigEndian)
+                        {
+                            string DSCtemp1 = DSCtemp.Remove(2);
+                            string DSCtemp2 = DSCtemp.Remove(0, 2).Remove(2);
+                            string DSCtemp3 = DSCtemp.Remove(0, 4).Remove(2);
+                            string DSCtemp4 = DSCtemp.Remove(0, 6);
+                            DSCtemp = DSCtemp4 + DSCtemp3 + DSCtemp2 + DSCtemp1;
+                        }
+
+                        DSCout += DSCtemp;
+                    }
+                    DSC = DSCout;
+                    //StartID[I1] = uint.Parse(DSC.Remove(8), NumberStyles.HexNumber);
+                    Timestamp[I1] = Convert.ToDouble(uint.Parse(DSC.Remove(0, 8).Remove(8), NumberStyles.HexNumber)) / 100000;
+                    //StructOpcode[I1] = uint.Parse(DSC.Remove(0, 16).Remove(8), NumberStyles.HexNumber);
+                    NoteType[I1] = uint.Parse(DSC.Remove(0, 24).Remove(8), NumberStyles.HexNumber);
+                    HoldTimer[I1] = Convert.ToDouble(int.Parse(DSC.Remove(0, 32).Remove(8), NumberStyles.HexNumber));
+                    HoldEnd[I1] = int.Parse(DSC.Remove(0, 40).Remove(8), NumberStyles.HexNumber);
+                    XPos[I1] = Convert.ToDouble(uint.Parse(DSC.Remove(0, 48).Remove(8), NumberStyles.HexNumber)) / 10000;
+                    YPos[I1] = Convert.ToDouble(uint.Parse(DSC.Remove(0, 56).Remove(8), NumberStyles.HexNumber)) / 10000;
+                    Angle1[I1] = Convert.ToDouble(int.Parse(DSC.Remove(0, 64).Remove(8), NumberStyles.HexNumber)) / 100000;
+                    WaveCount[I1] = int.Parse(DSC.Remove(0, 72).Remove(8), NumberStyles.HexNumber);
+                    Angle2[I1] = Convert.ToDouble(int.Parse(DSC.Remove(0, 80).Remove(8), NumberStyles.HexNumber)) / 100000;
+                    Amplitude[I1] = uint.Parse(DSC.Remove(0, 88).Remove(8), NumberStyles.HexNumber);
+                    NoteTimer[I1] = Convert.ToDouble(uint.Parse(DSC.Remove(0, 96).Remove(8), NumberStyles.HexNumber)) / 1000;
+                    //UnknownVariable[I1] = uint.Parse(DSC.Remove(0, 104).Remove(8), NumberStyles.HexNumber);
+                    //EndInt[I1] = int.Parse(DSC.Remove(0, 112), NumberStyles.HexNumber);
+                    int tempI1 = I1 + 1;
+
+                    if (HoldTimer[I1] != -1)
+                        HoldTimer[I1] = HoldTimer[I1] / 1000000;
+
+                    Console.WriteLine("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11}",
+                        tempI1, Timestamp[I1], NoteIDParser(NoteType[I1]), HoldTimer[I1], HoldEnd[I1], XPos[I1],
+                        YPos[I1], Angle1[I1], WaveCount[I1], Angle2[I1], Amplitude[I1], NoteTimer[I1]);
+                    notes += "\r\n" + tempI1 + "," + Timestamp[I1] + "," + NoteIDParser(NoteType[I1]) + "," +
+                        HoldTimer[I1] + "," + HoldEnd[I1] + "," + XPos[I1] + "," + YPos[I1] + "," + Angle1[I1] + "," +
+                        WaveCount[I1] + "," + Angle2[I1] + "," + Amplitude[I1] + "," + NoteTimer[I1];
+                    I1++;
+                }
             }
-            File.WriteAllText(Path.ChangeExtension(file, "out.txt"), notes);
+            File.WriteAllText(Path.ChangeExtension(file, "csv"), notes);
         }
 
         public static int HexParser(string file)
@@ -90,7 +116,7 @@ namespace PROJECTDIVA_Tool
                         I1 = 0;
                         if (I2 == 15)
                         {
-                            DSC2 += (DSC1 + "\n");
+                            DSC2 += (DSC1 + "\r\n");
                             DSC1 = "";
                             I2 = 0;
                             I3++;
@@ -100,8 +126,48 @@ namespace PROJECTDIVA_Tool
                 else
                     I++;
             }
-            File.WriteAllText(Path.ChangeExtension(file, ".txt"), DSC2.Remove(DSC2.Length - 1).Replace(" ", ""));
+            File.WriteAllText(Path.ChangeExtension(file, "hex"), DSC2.Remove(DSC2.Length - 2).Replace(" ", ""));
             return I3;
+        }
+
+        public static string NoteIDParser(uint note)
+        {
+            string Note = "";
+            if (note == 0)
+                    Note = "TRIANGLE";
+            else if (note == 1)
+                Note = "CIRCLE";
+            else if (note == 2)
+                Note = "CROSS";
+            else if (note == 3)
+                Note = "SQUARE";
+            else if (note == 4)
+                Note = "TRIANGLE_DOUBLE";
+            else if (note == 5)
+                Note = "CIRCLE_DOUBLE";
+            else if (note == 6)
+                Note = "CROSS_DOUBLE";
+            else if (note == 7)
+                Note = "SQUARE_DOUBLE";
+            else if (note == 8)
+                Note = "TRIANGLE_HOLD";
+            else if (note == 9)
+                Note = "CIRCLE_HOLD";
+            else if (note == 10)
+                Note = "CROSS_HOLD";
+            else if (note == 11)
+                Note = "SQUARE_HOLD";
+            else if (note == 12)
+                Note = "STAR";
+            else if (note == 14)
+                Note = "STAR_DOUBLE";
+            else if (note == 15)
+                Note = "CHANCE_STAR";
+            else if (note == 22)
+                Note = "LINK_STAR";
+            else if (note == 23)
+                Note = "LINK_STAR_END";
+            return Note;
         }
     }
 }

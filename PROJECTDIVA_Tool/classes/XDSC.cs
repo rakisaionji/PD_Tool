@@ -1,10 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Globalization;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace PROJECTDIVA_Tool
 {
@@ -14,7 +10,6 @@ namespace PROJECTDIVA_Tool
         {
             HexParser(file);
             Decoder(file, PreParser(file));
-            Console.Read();
         }
 
         public static void HexParser (string file)
@@ -36,7 +31,7 @@ namespace PROJECTDIVA_Tool
                     else if (DSC1temp != "")
                     {
                         if (Notes(DSC))
-                            DSC1 += ("\n" + DSC1temp + " " + DSC + " ");
+                            DSC1 += ("\r\n" + DSC1temp + " " + DSC + " ");
                         else
                             DSC1 += (DSC1temp + " " + DSC + " ");
                         DSC1temp = "";
@@ -55,77 +50,66 @@ namespace PROJECTDIVA_Tool
                     }
                 }
             }
-            File.WriteAllText(Path.ChangeExtension(file, ".temp"), DSC2);
-            Functions(file, ".temp");
+            File.WriteAllText(Path.ChangeExtension(file, "temp"), DSC2);
         }
         
         public static void Decoder(string file, int I)
         {
-            string[] dsc = File.ReadAllLines(Path.ChangeExtension(file, ".txt"));
+            string[] dsc = File.ReadAllLines(Path.ChangeExtension(file, "hex"));
             //File.Delete(Path.ChangeExtension(file, ".txt"));
 
-            uint[] StartID = new uint[I];
-            uint[] Timestamp = new uint[I];
-            uint[] StructOpcode = new uint[I];
+            //uint[] StartID = new uint[I];
+            double[] Timestamp = new double[I];
+            //uint[] StructOpcode = new uint[I];
             uint[] NoteType = new uint[I];
-            int[] HoldTimer = new int[I];
+            double[] HoldTimer = new double[I];
             int[] HoldEnd = new int[I];
-            uint[] XPos = new uint[I];
-            uint[] YPos = new uint[I];
-            int[] Angle1 = new int[I];
+            double[] XPos = new double[I];
+            double[] YPos = new double[I];
+            double[] Angle1 = new double[I];
             int[] WaveCount = new int[I];
-            int[] NoteTimer = new int[I];
+            double[] NoteTimer = new double[I];
             uint[] Curve = new uint[I];
-            uint[] NoteSpeed = new uint[I];
-            uint[] UnknownVariable = new uint[I];
-            int[] EndInt = new int[I];
+            double[] NoteSpeed = new double[I];
+            //uint[] UnknownVariable = new uint[I];
+            //int[] EndInt = new int[I];
             int I1 = 0;
-            string notes = "#Note: StartID, Timestamp, StructOpcode, NoteType, HoldTimer, HoldEnd, XPos, YPos, Angle1, " +
-                "WaveCount, NoteTimer, Curve, NoteSpeed, UnknownVariable, EndInt"; 
+            string notes = ",timestamp,type,holdLength,bIsHoldEnd,posX,posY,entryAngle,oscillationFrequency,oscillationAngle," +
+                "oscillationAmplitude,timeout";
 
             foreach (string DSC in dsc)
             {
-                StartID[I1] = uint.Parse(DSC.Remove(8), NumberStyles.HexNumber);
-                Timestamp[I1] = uint.Parse(DSC.Remove(0, 8).Remove(8), NumberStyles.HexNumber);
-                StructOpcode[I1] = uint.Parse(DSC.Remove(0, 16).Remove(8), NumberStyles.HexNumber);
-                NoteType[I1] = uint.Parse(DSC.Remove(0, 24).Remove(8), NumberStyles.HexNumber);
-                HoldTimer[I1] = int.Parse(DSC.Remove(0, 32).Remove(8), NumberStyles.HexNumber);
-                HoldEnd[I1] = int.Parse(DSC.Remove(0, 40).Remove(8), NumberStyles.HexNumber);
-                XPos[I1] = uint.Parse(DSC.Remove(0, 48).Remove(8), NumberStyles.HexNumber);
-                YPos[I1] = uint.Parse(DSC.Remove(0, 56).Remove(8), NumberStyles.HexNumber);
-                Angle1[I1] = int.Parse(DSC.Remove(0, 64).Remove(8), NumberStyles.HexNumber);
-                WaveCount[I1] = int.Parse(DSC.Remove(0, 72).Remove(8), NumberStyles.HexNumber);
-                NoteTimer[I1] = int.Parse(DSC.Remove(0, 80).Remove(8), NumberStyles.HexNumber);
-                Curve[I1] = uint.Parse(DSC.Remove(0, 88).Remove(8), NumberStyles.HexNumber);
-                NoteSpeed[I1] = uint.Parse(DSC.Remove(0, 96).Remove(8), NumberStyles.HexNumber);
-                UnknownVariable[I1] = uint.Parse(DSC.Remove(0, 104).Remove(8), NumberStyles.HexNumber);
-                EndInt[I1] = int.Parse(DSC.Remove(0, 112), NumberStyles.HexNumber);
-                Console.WriteLine("Note {0}: {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}, {13}, {14}, {15}",
-                    I1, StartID[I1], Timestamp[I1], StructOpcode[I1], NoteType[I1], HoldTimer[I1], HoldEnd[I1], XPos[I1],
-                    YPos[I1], Angle1[I1], WaveCount[I1], NoteTimer[I1], Curve[I1], NoteSpeed[I1], UnknownVariable[I1],
-                    EndInt[I1]);
-                notes += "\nNote" + I1 + ": " + StartID[I1] + ", " + Timestamp[I1] + ", " + StructOpcode[I1] + ", " +
-                    NoteType[I1] + ", " + HoldTimer[I1] + ", " + HoldEnd[I1] + ", " + XPos[I1] + ", " + YPos[I1] +", " +
-                    Angle1[I1] + ", " + WaveCount[I1] + ", " + NoteTimer[I1] + ", " + Curve[I1] + ", " + NoteSpeed[I1] + 
-                    ", " + UnknownVariable[I1] + ", " + EndInt[I1];
-                I1++;
-            }
-            File.WriteAllText(Path.ChangeExtension(file, "out.txt"), notes);
-        }
+                if (DSC.StartsWith("00000001"))
+                {
+                    //StartID[I1] = uint.Parse(DSC.Remove(8), NumberStyles.HexNumber);
+                    Timestamp[I1] = Convert.ToDouble(uint.Parse(DSC.Remove(0, 8).Remove(8), NumberStyles.HexNumber)) / 100000;
+                    //StructOpcode[I1] = uint.Parse(DSC.Remove(0, 16).Remove(8), NumberStyles.HexNumber);
+                    NoteType[I1] = uint.Parse(DSC.Remove(0, 24).Remove(8), NumberStyles.HexNumber);
+                    HoldTimer[I1] = Convert.ToDouble(int.Parse(DSC.Remove(0, 32).Remove(8), NumberStyles.HexNumber));
+                    HoldEnd[I1] = int.Parse(DSC.Remove(0, 40).Remove(8), NumberStyles.HexNumber);
+                    XPos[I1] = Convert.ToDouble(uint.Parse(DSC.Remove(0, 48).Remove(8), NumberStyles.HexNumber)) / 10000;
+                    YPos[I1] = Convert.ToDouble(uint.Parse(DSC.Remove(0, 56).Remove(8), NumberStyles.HexNumber)) / 10000;
+                    Angle1[I1] = Convert.ToDouble(int.Parse(DSC.Remove(0, 64).Remove(8), NumberStyles.HexNumber)) / 100000;
+                    WaveCount[I1] = int.Parse(DSC.Remove(0, 72).Remove(8), NumberStyles.HexNumber);
+                    NoteTimer[I1] = Convert.ToDouble(int.Parse(DSC.Remove(0, 80).Remove(8), NumberStyles.HexNumber)) / 100000;
+                    Curve[I1] = uint.Parse(DSC.Remove(0, 88).Remove(8), NumberStyles.HexNumber);
+                    NoteSpeed[I1] = Convert.ToDouble(uint.Parse(DSC.Remove(0, 96).Remove(8), NumberStyles.HexNumber)) / 1000;
 
-        public static void Functions(string file, string code)
-        {
-            string tempdsc = BitConverter.ToString(File.ReadAllBytes(Path.ChangeExtension(file, ".temp")));
-            File.Delete(Path.ChangeExtension(file, ".temp"));
-            tempdsc = tempdsc.Replace("-", "");
-            if (code == ".temp")
-                tempdsc = tempdsc.Replace("200A", "200D0A");
-            else if (code == ".txt")
-                tempdsc = tempdsc.Remove(0, 4).Remove(tempdsc.Length - 8);
-            byte[] bytes = new byte[tempdsc.Length / 2];
-            for (int i = 0; i < tempdsc.Length; i += 2)
-                bytes[i / 2] = Convert.ToByte(tempdsc.Substring(i, 2), 16);
-            File.WriteAllBytes(Path.ChangeExtension(file, code), bytes);
+                    int tempI1 = I1 + 1;
+
+                    if (HoldTimer[I1] != -1)
+                        HoldTimer[I1] = HoldTimer[I1] / 1000000;
+
+                    Console.WriteLine("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11}",
+                        I1, Timestamp[I1], NoteType[I1], HoldTimer[I1], HoldEnd[I1], XPos[I1], YPos[I1], Angle1[I1],
+                        WaveCount[I1], NoteTimer[I1], Curve[I1], NoteSpeed[I1]);
+                    notes += "\r\n" + tempI1 + "," + Timestamp[I1] + "," + NoteType[I1] + "," + HoldTimer[I1] + "," +
+                        HoldEnd[I1] + "," + XPos[I1] + "," + YPos[I1] + "," + Angle1[I1] + "," + WaveCount[I1] + "," +
+                        NoteTimer[I1] + "," + Curve[I1] + "," + NoteSpeed[I1];
+                    I1++;
+                }
+            }
+            File.WriteAllText(Path.ChangeExtension(file, "csv"), notes);
         }
 
         public static bool Notes(string dsc)
@@ -183,8 +167,8 @@ namespace PROJECTDIVA_Tool
 
         public static int PreParser(string file)
         {
-            string[] dsc = File.ReadAllLines(Path.ChangeExtension(file, ".temp"));
-            File.Delete(Path.ChangeExtension(file, ".temp"));
+            string[] dsc = File.ReadAllLines(Path.ChangeExtension(file, "temp"));
+            File.Delete(Path.ChangeExtension(file, "temp"));
             int I = 0, I1 = 1;
             foreach (string DSC1 in dsc)
                 I++;
@@ -214,8 +198,8 @@ namespace PROJECTDIVA_Tool
                     dsctemp1 = dsctemp.Remove(0, dsctemp.Length - 104).Remove(16);
                 I1++;
             }
-            File.WriteAllLines(Path.ChangeExtension(file, ".temp"), DSC);
-            Functions(file, ".txt");
+
+            File.WriteAllLines(Path.ChangeExtension(file, "hex"), DSC);
             return I;
         }
 
