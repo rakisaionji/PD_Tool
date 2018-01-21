@@ -145,7 +145,7 @@ namespace PROJECTDIVA_Tool
             else if (note == 26)
                 Note = "CIRCLE_RUSH";
             else if (note == 27)
-                Note = "String_RUSH";
+                Note = "CROSS_RUSH";
             else if (note == 28)
                 Note = "SQUARE_RUSH";
             return Note;

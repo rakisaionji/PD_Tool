@@ -4,7 +4,6 @@ A simple tool for working with Project Diva F/F 2nd/X files
 # Dependencies:
 + `.NET Framework 4.5.2`: Required to build DIVALib C# projects.
 + `.NET Framework 4.6.1`: Required to run/build PROJECTDIVA_Tool C# projects.
-+ `Packages can be found here`: ftp://ftp.kujikita.com/packages.zip
 
 # Tools:
 
