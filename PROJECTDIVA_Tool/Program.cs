@@ -9,10 +9,11 @@ namespace PROJECTDIVA_Tool
         [STAThread]
         static void Main(string[] args)
         {
+            bool complete = true;
             foreach (string arg in args)
-                if (arg.Contains("."))
-                    Functions(arg, "3", 1);
-            MainMenu(0);
+                complete = Functions(arg, "3", 1);
+            if (complete)
+                MainMenu(0);
         }
 
         public static void MainMenu(int code)
@@ -95,7 +96,7 @@ namespace PROJECTDIVA_Tool
             Console.WriteLine(Text);
         }
 
-        public static void Functions(string file, string function, int code)
+        public static bool Functions(string file, string function, int code)
         {
             Console.Clear();
             string filein = "", fileout = "";
@@ -109,7 +110,9 @@ namespace PROJECTDIVA_Tool
             if (file.Equals(""))
                 MainMenu(0);
 
-            if (!File.Exists(file))
+            if (!File.Exists(file) && function != "2")
+                MainMenu(0);
+            else if (!Directory.Exists(file) && function == "2")
                 MainMenu(0);
             else
             {
@@ -181,9 +184,12 @@ namespace PROJECTDIVA_Tool
                     MainMenu(0);
             }
             if (code == 0)
+            {
                 MainMenu(9);
-            else if (code == 1)
-                Exit();
+                return true;
+            }
+            else
+                return false;
         }
 
         public static string Choose(int code)

@@ -52,17 +52,8 @@
     <NoWin32Manifest>true</NoWin32Manifest>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="System.IO.Compression" />
-    <Reference Include="System.Net.Http">
-      <HintPath>..\packages\System.Net.Http.4.3.0\lib\net46\System.Net.Http.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="System.Windows" />
-    <Reference Include="System.Windows.Forms" />
-  </ItemGroup>
-  <ItemGroup>
     <Compile Include="classes\F2DSC.cs" />
+    <Compile Include="classes\Func.cs" />
     <Compile Include="classes\XDSC.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="classes\FarcPack.cs" />
@@ -85,6 +76,9 @@
       <Project>{0777cd4f-2d6b-4e46-9f55-ec4dcc1ab59b}</Project>
       <Name>DIVALib</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
