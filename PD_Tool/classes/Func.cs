@@ -86,6 +86,9 @@ namespace PROJECTDIVA_Tool
                     I1++;
                 }
             File.WriteAllText(Path.ChangeExtension(file, "csv"), notes);
+            dsc = null;
+            notes = null;
+            GC.Collect();
         }
 
         public static string RC(double In)

@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27130.2003
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PROJECTDIVA_Tool", "PROJECTDIVA_Tool\PROJECTDIVA_Tool.csproj", "{22FCF170-F3A4-4C2E-A206-CB435739F4DE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PD_Tool", "PD_Tool\PD_Tool.csproj", "{22FCF170-F3A4-4C2E-A206-CB435739F4DE}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DIVALib", "DIVALib\DIVALib.csproj", "{0777CD4F-2D6B-4E46-9F55-EC4DCC1AB59B}"
 EndProject

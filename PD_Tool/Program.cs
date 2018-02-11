@@ -1,33 +1,42 @@
 ﻿using System;
 using System.IO;
+using System.Text;
 using System.Diagnostics;
+using System.Windows.Forms;
 
 namespace PROJECTDIVA_Tool
 {
     public class Program
     {
+        static byte ReturnCode = 0;
+        static string function = "";
         [STAThread]
         static void Main(string[] args)
         {
             bool complete = true;
-            foreach (string arg in args)
-                complete = Functions(arg, "3", 1);
+            if (args.Length > 0)
+                foreach (string arg in args)
+                    complete = Functions(arg, "3", 1);
             if (complete)
-                MainMenu(0);
+                MainMenu();
+            Exit();
         }
 
-        public static void MainMenu(int code)
+        static void MainMenu()
         {
-
-            if (code == 7)
+            GC.Collect();
+            if (ReturnCode == 7)
                 Console.WriteLine("This file isn't PVSC.");
-            else if(code == 8)
-                Console.WriteLine("This file isn't DIVAFILE, FARC Archive.");
-            else if (code == 9)
+            else if (ReturnCode == 81)
+                Console.WriteLine("This file isn't DIVAFILE.");
+            else if (ReturnCode == 82)
+                Console.WriteLine("This file isn't FARC Archive.");
+            else if (ReturnCode == 9)
                 Console.WriteLine("Ready.");
-            if (code != 0)
+            if (ReturnCode != 0)
                 Console.Read();
-            string function = "";
+            ReturnCode = 0;
+            function = "";
             Console.Clear();
 
             ConsoleDesign("Fill");
@@ -66,19 +75,17 @@ namespace PROJECTDIVA_Tool
             function = Console.ReadLine();
             bool isNumber = true;
 
-            if (function == "")
-                MainMenu(1);
+            if (function == "" || function.ToUpper() == "Q")
+                Exit();
 
             foreach (char c in function)
                 if (!Char.IsNumber(c))
                     isNumber = false;
-
-            if (function.ToUpper() == "Q")
-                Exit();
-            else if (isNumber)
+            
+            if (isNumber)
                 Functions("", function, 0);
             else
-                MainMenu(1);
+                ReturnCode = 1;
 
         }
 
@@ -108,37 +115,43 @@ namespace PROJECTDIVA_Tool
                     file = Choose(2);
             }
             if (file.Equals(""))
-                MainMenu(0);
+                ReturnCode = 0;
 
             if (!File.Exists(file) && function != "2")
-                MainMenu(0);
+                ReturnCode = 0;
             else if (!Directory.Exists(file) && function == "2")
-                MainMenu(0);
+                ReturnCode = 0;
             else
             {
                 if (function == "1" || function == "2")
                 {
                     string startuppath = Directory.GetCurrentDirectory() + "\\";
-                    Console.WriteLine("Source folder: {0}", startuppath);
+                    filein = file;
                     if (function == "1")
-                        Console.WriteLine("File: {0}", file);
-                    if (function == "2")
-                        Console.WriteLine("Folder: {0}", file);
-                    if (file.Contains(startuppath))
-                        filein = file.Remove(0, startuppath.Length);
+                    {
+                        byte[] FILEstr = File.ReadAllBytes(filein);
+                        if (Encoding.ASCII.GetString(FILEstr).ToUpper().StartsWith("FARC"))
+                        {
+                            Console.WriteLine("File: {0}", file);
+                            FARC(function, filein);
+                        }
+                        else
+                            ReturnCode = 82;
+                    }
+                    else if (function == "2")
+                    {
+                        Console.WriteLine("Directory: {0}", file);
+                        FARC(function, filein);
+                    }
                     else
-                        filein = file;
+                        ReturnCode = 82;
 
-                    FARC(startuppath, startuppath + filein, "");
                 }
                 else if (function == "3" || function == "4")
                 {
                     string startuppath = Directory.GetCurrentDirectory() + "\\";
                     string Extension = Path.GetExtension(file);
-                    if (file.Contains(startuppath))
-                        filein = file.Remove(0, startuppath.Length);
-                    else
-                        filein = file;
+                    filein = file;
                     switch (function)
                     {
                         case "3":
@@ -149,12 +162,22 @@ namespace PROJECTDIVA_Tool
                                 fileout = filein.Replace(Extension, "_dec" + Extension);
                                 DIVAFILE("e", filein, fileout);
                             }
+                            else if (FILE.StartsWith("50-56-53-43"))
+                                if (FILE.Contains("56-00-00-00"))
+                                    Functions(file, "7", 1);
+                                else
+                                    Functions(file, "6", 1);
                             else if (FILEstr.ToUpper().StartsWith("FARC"))
                                 Functions(file, "1", 1);
                             else
                             {
-                                Console.WriteLine("This file isn't DIVAFILE or FARC Archive.");
-                                Console.Read();
+                                if (code == 1)
+                                {
+                                    Console.WriteLine("This file isn't DIVAFILE, FARC Archive or F2nd/X DSC.");
+                                    Console.Read();
+                                }
+                                else
+                                    ReturnCode = 81;
                             }
                             break;
                         case "4":
@@ -168,24 +191,19 @@ namespace PROJECTDIVA_Tool
                 {
                     string FILEstr = File.ReadAllText(file);
                     if (FILEstr.ToUpper().StartsWith("PVSC"))
-                        switch (function)
-                        {
-                            case "6":
-                                F2DSC.DSC(file);
-                                break;
-                            case "7":
-                                XDSC.DSC(file);
-                                break;
-                        }
+                        if (function == "6")
+                            DSC.DSCParser(file, "F2");
+                        else
+                            DSC.DSCParser(file, "X");
                     else
-                        MainMenu(7);
+                        ReturnCode = 7;
                 }
                 else
-                    MainMenu(0);
+                    ReturnCode = 0;
             }
             if (code == 0)
             {
-                MainMenu(9);
+                ReturnCode = 9;
                 return true;
             }
             else
@@ -195,10 +213,30 @@ namespace PROJECTDIVA_Tool
         public static string Choose(int code)
         {
             if (code == 1)
-                Console.WriteLine("Enter file name");
+            {
+                Console.WriteLine("Choose file:");
+                OpenFileDialog ofd = new OpenFileDialog
+                {
+                    InitialDirectory = Application.StartupPath,
+                    DefaultExt = ".farc",
+                    Filter = "FARC Archives (*.farc)|*.farc|DSC files (*.dsc)|*.dsc|All files (*.*)|*.*"
+                };
+                if (ofd.ShowDialog() == DialogResult.OK)
+                    return ofd.SafeFileName.ToString();
+            }
             else if (code == 2)
-                Console.WriteLine("Enter folder name");
-            return Console.ReadLine();
+            {
+                Console.WriteLine("Enter folder name:");
+
+                FolderBrowserDialog ofd = new FolderBrowserDialog
+                {
+                    SelectedPath = Application.StartupPath,
+                };
+                if (ofd.ShowDialog() == DialogResult.OK)
+                    return ofd.SelectedPath.ToString();
+                //return Console.ReadLine();
+            }
+            return "";
         }
 
         public static void DIVAFILE(string crypt,string filein, string fileout)
@@ -214,10 +252,17 @@ namespace PROJECTDIVA_Tool
             p.WaitForExit();
         }
 
-        public static void FARC(string startuppath, string filein, string options)
+        public static void FARC(string function, string file)
         {
+            string[] args = { "-c", file };
             Console.WriteLine("Starting module FARCPack.");
-            Farc.FARCPack(startuppath, options + filein);
+            if (function == "2")
+            {
+                Console.WriteLine("Compress it?\n1) Yes;\n2) No.");
+                if (Console.ReadLine() == "2")
+                    args[0] = "";
+            }
+            Farc.FARCPack(args);
         }
 
         public static void Exit()
