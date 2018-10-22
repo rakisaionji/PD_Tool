@@ -36,7 +36,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -47,15 +47,35 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <DebugSymbols>true</DebugSymbols>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup>
     <NoWin32Manifest>true</NoWin32Manifest>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="classes\DSC.cs" />
-    <Compile Include="classes\Func.cs" />
+    <Compile Include="classes\DB\Auth.cs" />
+    <Compile Include="classes\DB\BoneData.cs" />
+    <Compile Include="classes\DB\DataBase.cs" />
+    <Compile Include="classes\DSC\Main.cs" />
+    <Compile Include="classes\DSC\DT.cs" />
+    <Compile Include="classes\DSC\DT2.cs" />
+    <Compile Include="classes\DSC\F.cs" />
+    <Compile Include="classes\DSC\FT.cs" />
+    <Compile Include="classes\DSC\F2.cs" />
+    <Compile Include="classes\DSC\X.cs" />
+    <Compile Include="classes\Tools\A3D.cs" />
+    <Compile Include="classes\Tools\DAE.cs" />
+    <Compile Include="classes\Tools\Model.cs" />
+    <Compile Include="classes\Tools\OBJ.cs" />
+    <Compile Include="classes\Tools\OSD.cs" />
+    <Compile Include="classes\Tools\STR.cs" />
+    <Compile Include="classes\Tools\TXI.cs" />
+    <Compile Include="classes\Tools\TXD.cs" />
+    <Compile Include="classes\DIVAFILE.cs" />
+    <Compile Include="classes\FARC.cs" />
+    <Compile Include="classes\System.cs" />
+    <Compile Include="classes\Tools\VAG.cs" />
     <Compile Include="Program.cs" />
-    <Compile Include="classes\FarcPack.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -71,19 +91,17 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\DIVALib\DIVALib.csproj">
-      <Project>{0777cd4f-2d6b-4e46-9f55-ec4dcc1ab59b}</Project>
-      <Name>DIVALib</Name>
+    <ProjectReference Include="..\DIVAsprTool\DIVAsprTool.csproj">
+      <Project>{95c356e3-fd99-4873-98f6-9d2977cd1577}</Project>
+      <Name>DIVAsprTool</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="System.Numerics" />
     <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="classes\F2nd\" />
-    <Folder Include="classes\F\" />
-    <Folder Include="classes\X\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

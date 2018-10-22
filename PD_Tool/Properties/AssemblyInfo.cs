@@ -1,5 +1,4 @@
 ﻿using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 [assembly: AssemblyTitle("PD_Tool")]
@@ -12,5 +11,5 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyCulture("")]
 [assembly: ComVisible(false)]
 [assembly: Guid("22fcf170-f3a4-4c2e-a206-cb435739f4de")]
-[assembly: AssemblyVersion("0.4.1.2")]
-[assembly: AssemblyFileVersion("0.4.1.2")]
+[assembly: AssemblyVersion("0.4.3.1")]
+[assembly: AssemblyFileVersion("0.4.3.1")]
