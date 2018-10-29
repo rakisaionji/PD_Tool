@@ -12,13 +12,13 @@ namespace PD_Tool.DB
 
         public static void Processor()
         {
-            Console.Title = "PD_Tool: DataBase Converter";
+            Console.Title = "PD_Tool: DB Converter";
             Console.Clear();
             Program.ConsoleDesign("Fill");
             Program.ConsoleDesign("         Choose type of DataBase file:");
             Program.ConsoleDesign("");
-            Program.ConsoleDesign("1. Auth");
-            Program.ConsoleDesign("2. BoneData");
+            Program.ConsoleDesign("1. Auth DB Converter");
+            Program.ConsoleDesign("2. BoneData DB Converter");
             Program.ConsoleDesign("");
             Program.ConsoleDesign("Fill");
             Console.WriteLine();

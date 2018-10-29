@@ -11,6 +11,7 @@
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
@@ -23,7 +24,6 @@
     <MapFileExtensions>true</MapFileExtensions>
     <ApplicationRevision>0</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
-    <IsWebBootstrapper>false</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
@@ -70,11 +70,11 @@
     <Compile Include="classes\Tools\OSD.cs" />
     <Compile Include="classes\Tools\STR.cs" />
     <Compile Include="classes\Tools\TXI.cs" />
+    <Compile Include="classes\Tools\VAG.cs" />
     <Compile Include="classes\Tools\TXD.cs" />
     <Compile Include="classes\DIVAFILE.cs" />
     <Compile Include="classes\FARC.cs" />
     <Compile Include="classes\System.cs" />
-    <Compile Include="classes\Tools\VAG.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

@@ -34,22 +34,24 @@ namespace PD_Tool
                 switch (filetype)
                 {
                     case "a3da":
-                        ofd.Filter = "A3DA files (*.a3da, *.xml)|*.a3da;*.xml";
+                        ofd.Filter = "A3DA files (*.a3da, *.xml)|*.a3da;*.xml|A3DA files (*.a3da)|*.a3da|XML files (*.xml)|*.xml";
                         break;
                     case "bin":
-                        ofd.Filter = "BIN files (*.bin, *.xml)|*.bin;*.xml";
+                        ofd.Filter = "BIN files (*.bin, *.xml)|*.bin;*.xml|BIN files (*.bin)|*.bin|XML files (*.xml)|*.xml";
                         break;
                     case "bon":
-                        ofd.Filter = "BON files (*.bon, *.bin, *.xml)|*.bon;*.bin;*.xml";
+                        ofd.Filter = "BON files (*.bon, *.bin, *.xml)|*.bon;*.bin;*.xml|BON files (*.bon)|*.bon|" +
+                            "BIN files (*.bin)|*.bin|XML files (*.xml)|*.xml";
                         break;
                     case "dsc":
-                        ofd.Filter = "DSC files (*.dsc, *.xml)|*.dsc;*.xml";
+                        ofd.Filter = "DSC files (*.dsc, *.xml)|*.dsc;*.xml|DSC files (*.dsc)|*.dsc|XML files (*.xml)|*.xml";
                         break;
                     case "farc":
                         ofd.Filter = "FARC Archives (*.farc)|*.farc";
                         break;
                     case "str":
-                        ofd.Filter = "STR files (*.str, *.bin, *.xml)|*.str;*.bin;*.xml";
+                        ofd.Filter = "STR files (*.str, *.bin, *.xml)|*.str;*.bin;*.xml|STR files (*.str)|*.str|" +
+                            "BIN files (*.bin)|*.bin|XML files (*.xml)|*.xml";
                         break;
                     case "txi":
                         ofd.Filter = "TXI files (*.txi)|*.txi";
@@ -335,6 +337,48 @@ namespace PD_Tool
                 writer.Seek(writer.Position + Al, 0);
         }
 
+        public static void XMLReader(XmlNode Child, ref bool Data, string Element)
+        { if (Child.Name == Element) Data = bool.Parse(Child.Value); }
+
+        public static void XMLReader(XmlAttribute Entry, ref bool Data, string Element)
+        { if (Entry.Name == Element) Data = bool.Parse(Entry.Value); }
+
+        public static void XMLReader(XmlNode Child, ref int Data, string Element)
+        { if (Child.Name == Element) Data = int.Parse(Child.Value); }
+
+        public static void XMLReader(XmlAttribute Entry, ref int Data, string Element)
+        { if (Entry.Name == Element) Data = int.Parse(Entry.Value); }
+
+        public static void XMLReader(XmlNode Child, ref uint Data, string Element)
+        { if (Child.Name == Element) Data = uint.Parse(Child.Value); }
+
+        public static void XMLReader(XmlAttribute Entry, ref uint Data, string Element)
+        { if (Entry.Name == Element) Data = uint.Parse(Entry.Value); }
+
+        public static void XMLReader(XmlNode Child, ref long Data, string Element)
+        { if (Child.Name == Element) Data = long.Parse(Child.Value); }
+
+        public static void XMLReader(XmlAttribute Entry, ref long Data, string Element)
+        { if (Entry.Name == Element) Data = long.Parse(Entry.Value); }
+
+        public static void XMLReader(XmlNode Child, ref ulong Data, string Element)
+        { if (Child.Name == Element) Data = ulong.Parse(Child.Value); }
+
+        public static void XMLReader(XmlAttribute Entry, ref ulong Data, string Element)
+        { if (Entry.Name == Element) Data = ulong.Parse(Entry.Value); }
+
+        public static void XMLReader(XmlNode Child, ref double Data, string Element)
+        { if (Child.Name == Element) Data = ToDouble(Child.Value); }
+
+        public static void XMLReader(XmlAttribute Entry, ref double Data, string Element)
+        { if (Entry.Name == Element) Data = ToDouble(Entry.Value); }
+
+        public static void XMLReader(XmlNode Child, ref string Data, string Element)
+        { if (Child.Name == Element) Data = Child.Value; }
+
+        public static void XMLReader(XmlAttribute Entry, ref string Data, string Element)
+        { if (Entry.Name == Element) Data = Entry.Value; }
+
         public static void XMLWriter(ref XmlElement element, bool Data, string Element)
         { XMLWriter(ref element, Data.ToString().ToLower(), Element); }
 
@@ -452,21 +496,20 @@ namespace PD_Tool
         public static void Write   (byte[] Val, int Length) { writer.Write(Val, 0,     Length); }
         public static void WriteVal(byte   Length)          { writer.Write(buf, 0,     Length); }
         
-        public static void Write(  bool val) {  ToArray(val ? 1 : 0); WriteVal(1); }
-        public static void Write(  byte val) {  ToArray(        val); WriteVal(1); }
-        public static void Write( short val) {  ToArray(        val); WriteVal(2); }
-        public static void Write(ushort val) {  ToArray( (short)val); WriteVal(2); }
-        public static void Write(   int val) {  ToArray(        val); WriteVal(4); }
-        public static void Write(  uint val) {  ToArray(   (int)val); WriteVal(4); }
-        public static void Write(  long val) {  ToArray(        val); WriteVal(8); }
-        public static void Write( ulong val) {  ToArray(  (long)val); WriteVal(8); }
-        public static void Write( float val) {             uint Val = ToSingle(val);
-                                                ToArray(        Val); WriteVal(4); }
-        public static void Write(double val) {            ulong Val = ToDouble(val);
-                                                ToArray(  (long)Val); WriteVal(8); }
-        public static void Write(string val) {    Write(Encoding.UTF8.GetBytes(val)); }
-        public static void Write(string Data, string val) { if (val.Length > 0)
-                                                  Write(Encoding.UTF8.GetBytes(Data + val + "\n")); }
+        public static void Write(  bool val) { ToArray(   (byte)(val ? 1 : 0)); }
+        public static void Write( sbyte val) { ToArray(   (byte)val); }
+        public static void Write(  byte val) { ToArray(         val); }
+        public static void Write( short val) { ToArray( (ushort)val); }
+        public static void Write(ushort val) { ToArray(         val); }
+        public static void Write(   int val) { ToArray(   (uint)val); }
+        public static void Write(  uint val) { ToArray(         val); }
+        public static void Write(  long val) { ToArray(  (ulong)val); }
+        public static void Write( ulong val) { ToArray(         val); }
+        public static void Write( float val) { ToArray(ToSingle(val)); }
+        public static void Write(double val) { ToArray(ToDouble(val)); }
+        public static void Write(string val) {   Write(Encoding.UTF8.GetBytes(val)); }
+        public static void Write(string Data, string val) { if (val != null) if (val != "") if (val.Length > 0)
+                                                 Write(Encoding.UTF8.GetBytes(Data + val + "\n")); }
 
         public static void Write( short val, bool Swap) {      Write(Endian(val)); }
         public static void Write(ushort val, bool Swap) {      Write(Endian(val)); }
@@ -492,13 +535,17 @@ namespace PD_Tool
         public static uint   Endian(  uint BE, bool IsBE) { if (IsBE) return (BE & 0xFF) << 24 |
                     ((BE >> 8) & 0xFF) << 16 | ((BE >> 16) & 0xFF) << 8 | (BE >> 24 & 0xFF); else return BE; }
 
-        public static void ToArray (byte val) { buf[0] = val; }
-        public static void ToArray(short val) { buf[1] = (byte)(val >>  8 & 0xFF); buf[0] = (byte)(val & 0xFF); }
-        public static void ToArray  (int val) { buf[3] = (byte)(val >> 24 & 0xFF); buf[2] = (byte)(val >> 16 & 0xFF);
-            buf[1] = (byte)(val >> 8 & 0xFF);   buf[0] = (byte)(val & 0xFF); }
-        public static void ToArray (long val) { buf[7] = (byte)(val >> 54 & 0xFF); buf[6] = (byte)(val >> 48 & 0xFF);
+        public static void ToArray(  byte val) { buf[0] = val;
+            WriteVal(1); }
+        public static void ToArray(ushort val) { buf[1] = (byte)(val >>  8 & 0xFF); buf[0] = (byte)(val & 0xFF);
+            WriteVal(2); }
+        public static void ToArray(  uint val) { buf[3] = (byte)(val >> 24 & 0xFF); buf[2] = (byte)(val >> 16 & 0xFF);
+            buf[1] = (byte)(val >> 8 & 0xFF);   buf[0] = (byte)(val & 0xFF);
+            WriteVal(4); }
+        public static void ToArray( ulong val) { buf[7] = (byte)(val >> 54 & 0xFF); buf[6] = (byte)(val >> 48 & 0xFF);
             buf[5] = (byte)(val >> 40 & 0xFF);  buf[4] = (byte)(val >> 32 & 0xFF); buf[3] = (byte)(val >> 24 & 0xFF);
-            buf[2] = (byte)(val >> 16 & 0xFF);  buf[1] = (byte)(val >>  8 & 0xFF); buf[0] = (byte)(val & 0xFF); }
+            buf[2] = (byte)(val >> 16 & 0xFF);  buf[1] = (byte)(val >>  8 & 0xFF); buf[0] = (byte)(val & 0xFF);
+            WriteVal(8); }
 
         public static ushort ToHalf(double val)
         {
@@ -553,21 +600,28 @@ namespace PD_Tool
             if (val < 0)
                 Sign = 1;
             val = Math.Abs(val);
+            double Pow1 = 1;
+            ulong Pow2 = (ulong)Math.Pow(2, ExpBits);
+            ulong Pow3 = (ulong)Math.Pow(2, ExpBits) - 1;
+            double x = 0;
 
             int MaxPow = (int)Math.Pow(2, MantBits - 1);
 
             int i = 0;
             while(i < MaxPow && i > -(MaxPow - 1))
             {
-                double x = val / Math.Pow(2, i);
+                Pow1 = Math.Pow(2, i);
+                x = val / Pow1;
                 if (x >= 1 && x < 2)
                 {
-                    double exponent_d = x * Math.Pow(2, ExpBits);
+                    double exponent_d = x * Pow2;
+                    ulong exponent_max = (ulong)Math.Ceiling(exponent_d);
+                    ulong exponent_min = (ulong)Math.Floor(exponent_d);
                     ulong exponent = 0;
-                    if (exponent_d % 1 >= 0.5)
-                        exponent = (ulong)Math.Floor(exponent_d) & (ulong)Math.Pow(2, ExpBits) - 1;
+                    if (Math.Abs(val - exponent_max / Pow2 * Pow1) > Math.Abs(val - exponent_min / Pow2 * Pow1))
+                        exponent = exponent_max & Pow3;
                     else
-                        exponent = (ulong)Math.Ceiling(exponent_d) & (ulong)Math.Pow(2, ExpBits) - 1;
+                        exponent = exponent_min & Pow3;
                     ulong mantissa = (ulong)(i + MaxPow - 1);
                     ulong d = Sign << (MantBits + ExpBits) | mantissa << ExpBits | exponent;
                     return d;

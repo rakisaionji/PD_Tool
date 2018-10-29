@@ -1,14 +1,15 @@
 # PD_Tool
-A simple tool for working with Project Diva F/F 2nd/X files
+A simple tool for working with Project Diva DT/FT/F/F2/X files
 
 # Dependencies:
-+ `.NET Framework 4.5.2`: Required to build DIVALib C# projects.
-+ `.NET Framework 4.6.1`: Required to run/build PD_Tool C# projects.
++ `.NET Framework 4.6.1`: Required to run/build PD_Tool C# project.
 
 # Tools:
-
-+ `FarcPack (by Skyth)`: A program that allows you to pack/unpack .farc files.
-
-# External Tools:
-
-+ `DIVAFILE (by s117)`: A program that allows you to encrypt/decrypt DIVAFILE files from Project Diva F 2nd/X.
+- `FARC ExtPack`
+- `DIVAFILE EncDec`
+- `DB_Tools`
+  - `Auth DB Converter`
+  - `Bone DB Converter`
+- `Converting Tools`
+  - `A3DA Converter`
+  - `STR Converter`

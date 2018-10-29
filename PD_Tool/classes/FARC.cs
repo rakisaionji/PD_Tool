@@ -353,7 +353,9 @@ namespace PD_Tool
             List<byte> Header = new List<byte>();
             for (int i = 0; i < 3; i++)
                 Header.Add(0x00);
-            if (Signature == Farc.FArc || Signature == Farc.FArC)
+            if (Signature == Farc.FArc)
+                Header.Add(0x20);
+            else if(Signature == Farc.FArC)
                 Header.Add(0x10);
             else if (Signature == Farc.FARC)
             {
@@ -375,7 +377,10 @@ namespace PD_Tool
 
             int Align = System.Align((int)System.writer.Position, 0x10) - (int)System.writer.Position;
             for (int i1 = 0; i1 < Align; i1++)
-                System.Write((byte)0x78);
+                if (Signature == Farc.FArc)
+                    System.Write((byte)0x00);
+                else
+                    System.Write((byte)0x78);
 
             for (int i = 0; i < Files.Length; i++)
                 CompressStuff(i);
@@ -437,9 +442,12 @@ namespace PD_Tool
             }
             if (Signature != Farc.FARC)
             {
-                int Align = System.Align((int)System.writer.Position, 0x10) - (int)System.writer.Position;
+                int Align = System.Align((int)System.writer.Position, 0x20) - (int)System.writer.Position;
                 for (int i1 = 0; i1 < Align; i1++)
-                    System.Write((byte)0x78);
+                    if (Signature == Farc.FArc)
+                        System.Write((byte)0x00);
+                    else
+                        System.Write((byte)0x78);
             }
         }
 

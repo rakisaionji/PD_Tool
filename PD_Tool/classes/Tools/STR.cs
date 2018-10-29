@@ -13,7 +13,7 @@ namespace PD_Tool.Tools
 
         public static void Processor()
         {
-            Console.Title = "PD_Tool: Converter Tools: STR Tools";
+            Console.Title = "PD_Tool: Converter Tools: STR Converter";
             //System.Choose(1, "str", out string InitialDirectory, out string[] FileNames);
 
             string[] FileNames = new string[1] { @"H:\Games\rpcs3\dev_hdd0\game\NPEB01393\USRDIR\rom\lang\en\str_array.xml" };

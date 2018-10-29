@@ -217,12 +217,12 @@ namespace PD_Tool
                     Console.Title = "PD_Tool: Converter Tools";
                     ConsoleDesign("Fill");
                     ConsoleDesign("");
-                    ConsoleDesign("                Choose action:");
+                    ConsoleDesign("                 Choose tool:");
                     ConsoleDesign("");
                     //ConsoleDesign("1. Extract model from OSD&TXI&TXD file");
                     //ConsoleDesign("2. Parse DSC");
-                    ConsoleDesign("3. STR Tools");
-                    //ConsoleDesign("4. A3DA Converter");
+                    ConsoleDesign("3. STR Converter");
+                    ConsoleDesign("4. A3DA Converter");
                     //ConsoleDesign("5. VAG Converter");
                     ConsoleDesign("");
                     ConsoleDesign("Fill");
@@ -241,7 +241,7 @@ namespace PD_Tool
                             Tools.STR.Processor();
                             break;
                         case "4":
-                            //Tools.A3D.Processor();
+                            Tools.A3D.Processor();
                             break;
                         case "5":
                             //Tools.VAG.Processor();
