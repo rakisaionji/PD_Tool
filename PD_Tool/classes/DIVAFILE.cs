@@ -1,89 +1,89 @@
-﻿using System;
+﻿//Original: https://github.com/s117/DIVAFILE_Tool
+
+using System;
 using System.IO;
-using System.Text;
 using System.Security.Cryptography;
+using KKtIO = KKtLib.IO.KKtIO;
+using KKtMain = KKtLib.Main;
+using KKtText = KKtLib.Text;
 
 namespace PD_Tool
 {
     public class DIVAFILE
     {
-        static readonly byte[] Key = Encoding.ASCII.GetBytes("file access deny");
+        static readonly byte[] Key = KKtText.ToASCII("file access deny");
 
-        public static void Decrypt(string file)
+        public static void Decrypt(int I, string file)
         {
-            System.reader = new FileStream(file, FileMode.Open, FileAccess.Read);
-            if (System.ReadInt64() != 0x454C494641564944)
+            KKtIO reader = KKtIO.OpenReader(file);
+            if (reader.ReadInt64() != 0x454C494641564944)
             {
-                System.reader.Close();
-                Encrypt(file);
+                reader.Close();
+                Encrypt(I, file);
             }
             else
             {
                 Console.Title = "PD_Tool: DIVAFILE Decryptor - File: " + Path.GetFileName(file);
-                System.ReadUInt32();
-                int StreamLenght = (int)System.reader.Length;
-                int FileLenght = System.ReadInt32();
+                reader.ReadUInt32();
+                int StreamLenght = (int)reader.Length;
+                int FileLenght = reader.ReadInt32();
                 byte[] decrypted = new byte[StreamLenght];
-                System.reader.Close();
+                reader.Seek(0, 0);
                 using (AesManaged crypto = new AesManaged())
                 {
                     crypto.Key = Key;
                     crypto.IV = new byte[16];
                     crypto.Mode = CipherMode.ECB;
                     crypto.Padding = PaddingMode.Zeros;
-                    using (CryptoStream cryptoData = new CryptoStream(new
-                        FileStream(file, FileMode.Open, FileAccess.Read),
+                    using (CryptoStream cryptoData = new CryptoStream(reader.BaseStream,
                         crypto.CreateDecryptor(crypto.Key, crypto.IV), CryptoStreamMode.Read))
                         cryptoData.Read(decrypted, 0, StreamLenght);
                 }
-                System.writer = new FileStream(file, FileMode.Create, FileAccess.ReadWrite, FileShare.ReadWrite);
-                System.writer.SetLength(FileLenght);
+                KKtIO writer = KKtIO.OpenWriter(file, FileLenght);
                 for(int i = 0x10; i < StreamLenght && i < FileLenght + 0x10; i++)
-                    System.Write(decrypted[i]);
-                System.writer.Close();
+                    writer.Write(decrypted[i]);
+                writer.Close();
             }
             Console.Title = "PD_Tool";
         }
 
-        public static void Encrypt(string file)
+        public static void Encrypt(int I, string file)
         {
-            System.reader = new FileStream(file, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
-            if (System.ReadInt64() == 0x454C494641564944)
+            KKtIO reader = KKtIO.OpenReader(file);
+            if (reader.ReadInt64() == 0x454C494641564944)
             {
-                System.reader.Close();
-                Decrypt(file);
+                reader.Close();
+                Decrypt(I, file);
             }
             else
             {
                 Console.Title = "PD_Tool: DIVAFILE Encryptor - File: " + Path.GetFileName(file);
-                int FileLenghtOrigin = (int)System.reader.Length;
-                int FileLenght = System.Align(FileLenghtOrigin, 16);
-                System.reader.Close();
+                int FileLenghtOrigin = (int)reader.Length;
+                int FileLenght = (int)KKtMain.Align((long)FileLenghtOrigin, 16);
+                reader.Close();
                 byte[] In = File.ReadAllBytes(file);
                 byte[] Inalign = new byte[FileLenght];
                 for (int i = 0; i < In.Length; i++)
                     Inalign[i] = In[i];
                 In = null;
                 byte[] encrypted = new byte[FileLenght];
-                System.reader.Close();
+                reader.Close();
                 using (AesManaged crypto = new AesManaged())
                 {
                     crypto.Key = Key;
                     crypto.IV = new byte[16];
                     crypto.Mode = CipherMode.ECB;
                     crypto.Padding = PaddingMode.Zeros;
-                    using (CryptoStream cryptoData = new CryptoStream(new
-                        MemoryStream(Inalign),
+                    using (CryptoStream cryptoData = new CryptoStream(new MemoryStream(Inalign),
                         crypto.CreateEncryptor(crypto.Key, crypto.IV), CryptoStreamMode.Read))
                         cryptoData.Read(encrypted, 0, FileLenght);
                 }
-                System.writer = new FileStream(file, FileMode.Create, FileAccess.ReadWrite, FileShare.ReadWrite);
-                System.writer.SetLength(Inalign.Length);
-                System.Write(0x454C494641564944);
-                System.Write(FileLenght);
-                System.Write(FileLenghtOrigin);
-                System.Write(encrypted);
-                System.writer.Close();
+                KKtIO writer = KKtIO.OpenWriter(file, Inalign.Length);
+                writer.Write(0x454C494641564944);
+                writer.Write(FileLenght);
+                writer.Write(FileLenghtOrigin);
+                writer.Write(encrypted);
+                writer.Close();
             }
             Console.Title = "PD_Tool";
         }

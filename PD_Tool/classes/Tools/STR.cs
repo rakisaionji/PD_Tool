@@ -1,156 +1,161 @@
 ﻿using System;
 using System.IO;
-using System.Xml;
 using System.Linq;
 using System.Text;
+using System.Xml.Linq;
 using System.Collections.Generic;
+using KKtIO = KKtLib.IO.KKtIO;
+using KKtXml = KKtLib.Xml.KKtXml;
+using KKtMain = KKtLib.Main;
+using KKtText = KKtLib.Text;
 
 namespace PD_Tool.Tools
 {
     public class STR
     {
-        public static STRa Data;
+        public static STRa[] Data = new STRa[KKtMain.NumWorkers];
 
         public static void Processor()
         {
             Console.Title = "PD_Tool: Converter Tools: STR Converter";
-            //System.Choose(1, "str", out string InitialDirectory, out string[] FileNames);
+            KKtMain.Choose(1, "str", out string[] FileNames);
 
-            string[] FileNames = new string[1] { @"H:\Games\rpcs3\dev_hdd0\game\NPEB01393\USRDIR\rom\lang\en\str_array.xml" };
             foreach (string file in FileNames)
             {
-                string filepath = file.Replace(Path.GetExtension(file), "");
-                string ext = Path.GetExtension(file);
+                ref STRa Data = ref STR.Data[0];
+                Data = new STRa { filepath = file.Replace(Path.
+                    GetExtension(file), ""), ext = Path.GetExtension(file) };
+
                 Console.Title = "PD_Tool: Converter Tools: STR Reader: " + Path.GetFileNameWithoutExtension(file);
-                switch (ext.ToLower())
+                switch (Data.ext.ToLower())
                 {
                     case ".str":
                     case ".bin":
-                        STRReader(filepath, ext);
-                        XMLWriter(filepath);
+                        Data.STRReader();
+                        Data.XMLWriter();
                         break;
                     case ".xml":
-                        XMLReader(filepath, ext);
-                        STRWriter(filepath);
+                        Data.XMLReader();
+                        Data.STRWriter();
                         break;
                 }
             }
         }
+    }
 
-        public static int STRReader(string file, string ext)
+    public class STRa
+    {
+        public struct String
         {
-            Data = new STRa { Header = new System.Header() };
-            System.reader = new FileStream(file + ext, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
+            public int ID;
+            public string Str;
+        }
 
-            System.format = System.Format.F;
-            Data.Header.Signature = System.ReadInt32();
-            if (Data.Header.Signature == 0x41525453)
+        public STRa()
+        { }
+
+        public int Count;
+        public int Offset;
+        public List<String> STR;
+        public KKtMain.POF0 POF0;
+        public KKtMain.Header Header;
+
+        public string filepath = "";
+        public string ext = "";
+
+        public int STRReader()
+        {
+            new STRa { Header = new KKtMain.Header() };
+            KKtIO reader =  KKtIO.OpenReader(filepath + ext);
+
+            reader.Format = KKtMain.Format.F;
+            Header.Signature = reader.ReadInt32();
+            if (Header.Signature == 0x41525453)
             {
-                Data.Header = System.HeaderReader();
-                Data.POF0 = System.AddPOF0(Data.Header);
-                for (int i = 0; i < Data.Count; i++)
+                Header = reader.ReadHeader(true);
+                STR = new List<String>();
+                POF0 = KKtMain.AddPOF0(Header);
+                reader.Seek(Header.Lenght, 0);
+
+                Count = reader.ReadInt32(true);
+                Offset = reader.ReadInt32(true);
+                reader.Seek(Offset, 0);
+
+                for (int i = 0; i < Count; i++)
                 {
-                    System.reader.Seek(Data.Header.Lenght, 0);
-                    Data.Count = System.ReadInt32(true);
-                    Data.Offset = System.ReadInt32(true);
-                    System.reader.Seek(Data.Offset, 0);
-                    Data.STR = new List<String>();
                     String Str = new String
                     {
-                        Str = Encoding.UTF8.GetString(System.NullTerminated(true, ref Data.POF0, true)),
-                        ID = System.ReadInt32(true)
+                        Str = KKtText.ToUTF8(reader.NullTerminated(ref POF0)),
+                        ID = reader.ReadInt32(true)
                     };
-                    Data.STR.Add(Str);
-                    System.reader.Seek(Data.POF0.Offset, 0);
-                    System.POF0Reader(ref Data.POF0);
+                    STR.Add(Str);
                 }
-            }
-            else if (Data.Header.Signature == 0x41564944)
-            {
-                DIVAFILE.Decrypt(file + ext);
-                return STRReader(file, ext);
+                reader.Seek(POF0.Offset, 0);
+                reader.POF0Reader(ref POF0);
             }
             else
             {
-                System.reader.Seek(-4, (SeekOrigin)1);
+                reader.Seek(-4, (SeekOrigin)1);
                 int i = 0;
-                Data.STR = new List<String>();
+                STR = new List<String>();
                 while (true)
                 {
-                    int a = System.ReadInt32(true);
+                    int a = reader.ReadInt32(true);
                     if (a != 0)
                     {
-                        System.reader.Seek(-4, (SeekOrigin)1);
-                        Data.STR.Add(new String { Str = Encoding.UTF8.GetString(
-                            System.NullTerminated(true, ref Data.POF0, true)), ID = i });
+                        reader.Seek(-4, (SeekOrigin)1);
+                        STR.Add(new String { Str = KKtText.ToUTF8(reader.NullTerminated(ref POF0)), ID = i });
                         i++;
                     }
                     else
                         break;
                 }
-                Data.Count = Data.STR.Count;
+                Count = STR.Count;
             }
 
-            System.reader.Close();
+            reader.Close();
             return 1;
         }
 
-        public static void STRWriter(string file)
+        public void STRWriter()
         {
             uint Offset = 0;
             uint CurrentOffset = 0;
-            System.writer = new FileStream(file + ((int)System.format > 1 ?
-                ".str" : ".bin"), FileMode.Create, FileAccess.ReadWrite, FileShare.ReadWrite);
-            System.writer.SetLength(0);
-            Data.POF0 = new System.POF0
-            {
-                Offsets = new List<int>(),
-                POF0Offsets = new List<long>()
-            };
-            System.IsBE = (int)System.format == 3;
+            KKtIO writer = KKtIO.OpenWriter(filepath + ((int)Header.Format > 1 ? ".str" : ".bin"), true);
+            writer.Format = Header.Format;
+            POF0 = new KKtMain.POF0 { Offsets = new List<int>(), POF0Offsets = new List<long>() };
+            writer.IsBE = (int)writer.Format == 3;
 
-            if ((int)System.format > 1)
+            if ((int)writer.Format > 1)
             {
-                System.Write(0x41525453);
-                System.Write(0);
-                System.Write(0x40);
-                if ((int)System.format == 3)
-                    System.Write(0x18000000);
-                else
-                    System.Write(0x10000000);
-                System.Write((long)0x00);
-                System.Write((long)0x00);
-                System.Write((long)0x00);
-                System.Write((long)0x00);
-                System.Write((long)0x00);
-                System.Write((long)0x00);
-                System.Write(Data.Count, true);
-                System.GetOffset(ref Data.POF0);
-                System.Write(0x80, true);
-                System.writer.Seek(0x80, 0);
-                for (int i = 0; i < Data.Count; i++)
+                writer.Seek(0x40, 0);
+                writer.Write(Count, true);
+                writer.GetOffset(ref POF0);
+                writer.Write(0x80, true);
+                writer.Seek(0x80, 0);
+                for (int i = 0; i < STR.Count; i++)
                 {
-                    System.GetOffset(ref Data.POF0);
-                    System.Write(0x00);
-                    System.Write(Data.STR[i].ID);
+                    writer.GetOffset(ref POF0);
+                    writer.Write(0x00);
+                    writer.Write(STR[i].ID, true);
                 }
-                System.Align(16);
+                writer.Align(16);
             }
             else
             {
-                for (int i = 0; i < Data.Count; i++)
-                    System.Write(0x00);
-                System.Align(32);
+                for (int i = 0; i < Count; i++)
+                    writer.Write(0x00);
+                writer.Align(32);
             }
             List<string> UsedSTR = new List<string>();
             List<int> UsedSTRPos = new List<int>();
-            int[] STRPos = new int[Data.Count];
-            for (int i1 = 0; i1 < Data.Count; i1++)
+            int[] STRPos = new int[Count];
+            for (int i1 = 0; i1 < Count; i1++)
             {
-                if (UsedSTR.Contains(Data.STR[i1].Str))
+                if (UsedSTR.Contains(STR[i1].Str))
                 {
-                    for (int i2 = 0; i2 < Data.Count; i2++)
-                        if (UsedSTR[i2] == Data.STR[i1].Str)
+                    for (int i2 = 0; i2 < Count; i2++)
+                        if (UsedSTR[i2] == STR[i1].Str)
                         {
                             STRPos[i1] = UsedSTRPos[i2];
                             break;
@@ -158,176 +163,96 @@ namespace PD_Tool.Tools
                 }
                 else
                 {
-                    STRPos[i1] = (int)System.writer.Position;
+                    STRPos[i1] = (int)writer.Position;
                     UsedSTRPos.Add(STRPos[i1]);
-                    UsedSTR.Add(Data.STR[i1].Str);
-                    System.Write(Encoding.UTF8.GetBytes(Data.STR[i1].Str + "\0"));
+                    UsedSTR.Add(STR[i1].Str);
+                    writer.Write(STR[i1].Str + "\0");
                 }
             }
-            if ((int)System.format > 1)
+            if ((int)writer.Format > 1)
             {
-                System.Align(16);
-                Offset = (uint)System.writer.Position;
-                System.writer.Seek(0x80, 0);
+                writer.Align(16);
+                Offset = (uint)writer.Position;
+                writer.Seek(0x80, 0);
             }
             else
-                System.writer.Seek(0, 0);
-            for (int i1 = 0; i1 < Data.Count; i1++)
+                writer.Seek(0, 0);
+            for (int i1 = 0; i1 < Count; i1++)
             {
-                System.Write(STRPos[i1], true);
-                if ((int)System.format > 1)
-                    System.writer.Seek(4, (SeekOrigin)1);
+                writer.Write(STRPos[i1], true);
+                if ((int)writer.Format > 1)
+                    writer.Seek(4, (SeekOrigin)1);
             }
 
-            if ((int)System.format > 1)
+            if ((int)writer.Format > 1)
             {
-
-                System.writer.Seek(Offset, 0);
-                Data.POF0.POF0Offsets = Data.POF0.POF0Offsets.Distinct().OrderBy(x => x).ToList();
-                List<long> POF0Offsets1 = new List<long>();
-                long CurrentPOF0Offset = 0;
-                int POF0Lenght = 0;
-                for (int i = 0; i < Data.POF0.POF0Offsets.Count; i++)
-                {
-                    long POF0Offset = Data.POF0.POF0Offsets[i] - CurrentPOF0Offset;
-                    if (POF0Offset != 0)
-                    {
-                        if (POF0Offset < 0xFF)
-                            POF0Lenght += 1;
-                        else if (POF0Offset < 0xFFFF)
-                            POF0Lenght += 2;
-                        else
-                            POF0Lenght += 4;
-                        POF0Offsets1.Add(POF0Offset);
-                    }
-                    CurrentPOF0Offset = Data.POF0.POF0Offsets[i];
-                }
-                Data.POF0.POF0Offsets = POF0Offsets1;
-
-                POF0Lenght += 6;
-                System.Write(Encoding.ASCII.GetBytes("POF0"));
-                long POF0Lenghtaling = (POF0Lenght % 16 != 0) ? (POF0Lenght +
-                    16 - POF0Lenght % 16) : POF0Lenght;
-                System.Write((uint)POF0Lenghtaling);
-                System.Write(0x20);
-                if (System.IsBE)
-                    System.Write(0x18000000);
-                else
-                    System.Write(0x10000000);
-                System.Write(0x00);
-                System.Write((uint)POF0Lenghtaling);
-                System.Write((long)0x00);
-                System.Write(POF0Lenght);
-                for (int i = 0; i < Data.POF0.POF0Offsets.Count; i++)
-                {
-                    long POF0Offset = Data.POF0.POF0Offsets[i];
-                    if (POF0Offset < 0xFF)
-                        System.Write((byte)(0x40 | (POF0Offset >> 2)));
-                    else if (POF0Offset < 0xFFFF)
-                        System.Write((ushort)(0x8000 | (POF0Offset >> 2)), true, true);
-                    else
-                        System.Write((uint)(0xC0000000 | (POF0Offset >> 2)), true, true);
-                }
-                System.Write(0);
-
-                if (System.writer.Position % 16 != 0)
-                    System.writer.Seek(16 -
-                        System.writer.Position % 16, SeekOrigin.Current);
-
-                for (int i = 0; i < 2; i++)
-                {
-                    System.EOFCWriter();
-                    if (i == 0)
-                        CurrentOffset = (uint)System.writer.Length;
-                }
-                System.writer.Seek(0x04, 0);
-                System.Write(CurrentOffset - 0x40);
-                System.writer.Seek(0x14, 0);
-                System.Write(Offset - 0x40);
+                writer.Seek(Offset, 0);
+                writer.Write(ref POF0, 1);
+                CurrentOffset = (uint)writer.Length;
+                writer.WriteEOFC(0);
+                Header.IsBE = writer.IsBE;
+                Header.Lenght = 0x40;
+                Header.DataSize = (int)(CurrentOffset - 0x40);
+                Header.Signature = 0x41525453;
+                Header.SectionSize = (int)(Offset - Header.Lenght);
+                writer.Seek(0, 0);
+                writer.Write(Header);
             }
-            System.writer.Close();
+            writer.Close();
         }
 
-        public static void XMLReader(string file, string ext)
+        public void XMLReader()
         {
-            System.XMLCompact = true;
-            Data = new STRa { Header = new System.Header() };
-            System.doc = new XmlDocument();
-            System.doc.Load(file + ext);
-            XmlElement STR = System.doc.DocumentElement;
-            Data.Count = STR.ChildNodes.Count;
-            Data.STR = new List<String>();
+            new STRa { Header = new KKtMain.Header() };
+            STR = new List<String>();
 
+            KKtXml Xml = new KKtXml();
+            Xml.OpenXml(filepath + ".xml", true);
+            Xml.Compact = true;
             int i = 0;
-            if (STR.Name == "STR")
+            foreach (XElement STR_ in Xml.doc.Elements("STR"))
             {
-                foreach (XmlAttribute Entry in STR.Attributes)
+                foreach (XAttribute Entry in STR_.Attributes())
                     if (Entry.Name == "Format")
-                        Enum.TryParse(Entry.Value, out System.format);
-                foreach (XmlNode STREntry in STR.ChildNodes)
+                        Enum.TryParse(Entry.Value, out Header.Format);
+                foreach (XElement STREntry in STR_.Elements())
                 {
                     if (STREntry.Name == "STREntry")
                     {
                         String Str = new String();
-                        foreach (XmlAttribute Entry in STREntry.Attributes)
+                        foreach (XAttribute Entry in STREntry.Attributes())
                         {
                             if (Entry.Name == "ID")
                                 Str.ID = int.Parse(Entry.Value);
                             if (Entry.Name == "String")
                                 Str.Str = Entry.Value;
                         }
-                        Data.STR.Add(Str);
+                        STR.Add(Str);
                     }
                     i++;
                 }
             }
+            Count = i;
         }
 
-        public static void XMLWriter(string file)
+        public void XMLWriter()
         {
-            System.doc = new XmlDocument();
-            if (File.Exists(file + ".xml"))
-                File.Delete(file + ".xml");
-            System.doc.InsertBefore(System.doc.CreateXmlDeclaration("1.0",
-                "utf-8", null), System.doc.DocumentElement);
-            XmlElement STR = System.doc.CreateElement("STR");
-            System.XMLCompact = true;
-            System.XMLWriter(ref STR, System.format.ToString(), "Format");
-            for (int i0 = 0; i0 < Data.Count; i0++)
+            KKtXml Xml = new KKtXml();
+            if (File.Exists(filepath + ".xml"))
+                File.Delete(filepath + ".xml");
+            XElement STR_ = new XElement("STR");
+            Xml.Compact = true;
+            Xml.Writer(STR_, Header.Format.ToString(), "Format");
+            for (int i0 = 0; i0 < Count; i0++)
             {
-                XmlElement STREntry = System.doc.CreateElement("STREntry");
-                System.XMLWriter(ref STREntry, Data.STR[i0].ID, "ID");
-                if (Data.STR[i0].Str != "")
-                    System.XMLWriter(ref STREntry, Data.STR[i0].Str, "String");
-                STR.AppendChild(STREntry);
+                XElement STREntry = new XElement("STREntry");
+                Xml.Writer(STREntry, STR[i0].ID, "ID");
+                if (STR[i0].Str != "")
+                     Xml.Writer(STREntry, STR[i0].Str, "String");
+                STR_.Add(STREntry);
             }
-            System.doc.AppendChild(STR);
-
-            XmlWriterSettings settings = new XmlWriterSettings
-            {
-                Encoding = Encoding.UTF8,
-                NewLineChars = "\n",
-                Indent = true,
-                IndentChars = " "
-            };
-            XmlWriter writer = XmlWriter.Create(file + ".xml", settings);
-            System.doc.Save(writer);
-            writer.Close();
-        }
-
-        public struct STRa
-        {
-            public int Count;
-            public int Offset;
-            public List<String> STR;
-            public System.POF0 POF0;
-            public System.Header Header;
-        }
-
-        public struct String
-        {
-            public int ID;
-            public string Str;
+            Xml.doc.Add(STR_);
+            Xml.SaveXml(filepath + ".xml");
         }
     }
 }

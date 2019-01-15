@@ -1,14 +1,4 @@
 .vs
 build
-DDStoPNG
-DIVAsprTool
-DSCTool
-PD_Tool/classes/Tools/DAE.cs
-PD_Tool/classes/Tools/Model.cs
-PD_Tool/classes/Tools/OBJ.cs
-PD_Tool/classes/Tools/OSD.cs
-PD_Tool/classes/Tools/TXD.cs
-PD_Tool/classes/Tools/TXI.cs
-PD_Tool/classes/Tools/VAG.cs
+KKtLib/obj
 PD_Tool/obj
-PD_Tool/classes/DSC

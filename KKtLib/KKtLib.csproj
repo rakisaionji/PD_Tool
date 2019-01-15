@@ -4,10 +4,10 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{7B5D5A3A-A6F8-4813-C97D-ACFC98F7397E}</ProjectGuid>
-    <OutputType>Exe</OutputType>
-    <RootNamespace>PD_Tool</RootNamespace>
-    <AssemblyName>PD_Tool</AssemblyName>
+    <ProjectGuid>{2BA7EFC6-91D1-8BBC-C487-06C7F36CC789}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>KKtLib</RootNamespace>
+    <AssemblyName>KKtLib</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -35,14 +35,13 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="classes\DB\Auth.cs" />
-    <Compile Include="classes\DB\DataBase.cs" />
-    <Compile Include="classes\Tools\A3D.cs" />
-    <Compile Include="classes\Tools\STR.cs" />
-    <Compile Include="classes\DIVAFILE.cs" />
-    <Compile Include="classes\FARC.cs" />
-    <Compile Include="classes\DSC.cs" />
-    <Compile Include="Program.cs" />
+    <Compile Include="A3DA.cs" />
+    <Compile Include="DSC.cs" />
+    <Compile Include="FARC.cs" />
+    <Compile Include="IO.cs" />
+    <Compile Include="Main.cs" />
+    <Compile Include="Text.cs" />
+    <Compile Include="Xml.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -52,12 +51,6 @@
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\KKtLib\KKtLib.csproj">
-      <Project>{2ba7efc6-91d1-8bbc-c487-06c7f36cc789}</Project>
-      <Name>KKtLib</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

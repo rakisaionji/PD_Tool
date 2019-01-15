@@ -1,41 +1,42 @@
 ﻿using System;
 using System.IO;
-using System.Xml;
-using System.Text;
-using System.Globalization;
+using System.Xml.Linq;
 using System.Collections.Generic;
+using KKtIO = KKtLib.IO.KKtIO;
+using KKtXml = KKtLib.Xml.KKtXml;
+using KKtMain = KKtLib.Main;
+using KKtText = KKtLib.Text;
 
 namespace PD_Tool
 {
     class Auth
     {
-        static AUTH Data = new AUTH();
-        static string[] dataArray = new string[4];
+        public static readonly AUTH[] Data = new AUTH[KKtMain.NumWorkers];
 
-        public static int BINReader(string file)
+        public static int BINReader(ref AUTH Data, string file)
         {
-            Data = new AUTH { Name = new List<string>(), Value = new List<string>() };
-            System.reader = new FileStream(file + ".bin", FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
+            Data = new AUTH { dataArray = new string[4], Name = new List<string>(), Value = new List<string>() };
+            KKtIO reader = KKtIO.OpenReader(file + ".bin");
 
-            System.format = System.Format.F;
-            Data.Signature = System.ReadInt32();
+            reader.Format = KKtMain.Format.F;
+            Data.Signature = reader.ReadInt32();
             if (Data.Signature != 0x44334123)
                 return 0;
-            Data.Signature = System.ReadInt32();
+            Data.Signature = reader.ReadInt32();
             if (Data.Signature != 0x5F5F5F41)
                 return 0;
-            System.ReadInt64();
+            reader.ReadInt64();
 
-            byte[] STRData = System.ReadBytes((int)(System.reader.Length - System.reader.Position));
+            byte[] STRData = reader.ReadBytes((int)(reader.Length - reader.Position));
             string TempSTRData = "";
             foreach (byte a in STRData)
                 if (a == 0x0A)
                 {
                     if (!TempSTRData.StartsWith("#"))
                     {
-                        dataArray = TempSTRData.Split('=');
-                        Data.Name.Add(dataArray[0]);
-                        Data.Value.Add(dataArray[1]);
+                        Data.dataArray = TempSTRData.Split('=');
+                        Data.Name.Add(Data.dataArray[0]);
+                        Data.Value.Add(Data.dataArray[1]);
                     }
                     TempSTRData = "";
                 }
@@ -75,61 +76,57 @@ namespace PD_Tool
                 }
             }
 
-            System.reader.Close();
+            reader.Close();
             return 1;
         }
 
-        public static void BINWriter(string file)
+        public static void BINWriter(ref AUTH Data, string file)
         {
             DateTime date = DateTime.Now;
 
-            System.writer = new FileStream(file + ".bin", FileMode.Create, FileAccess.ReadWrite, FileShare.ReadWrite);
-            System.writer.SetLength(0);
+            KKtIO writer = KKtIO.OpenWriter(file + ".bin", true);
 
-            System.Write("#A3DA__________\n");
-            System.Write("#" + System.ToTitleCase(date.ToString("ddd")) + " " + System.ToTitleCase(
-                date.ToString("MMM")) + " " + date.ToString("dd HH:mm:ss yyyy") + "\n");
+            writer.Write("#A3DA__________\n");
+            writer.Write("#" + KKtMain.ToTitleCase(date.ToString("ddd")) + " " + KKtMain.
+                ToTitleCase(date.ToString("MMM")) + " " + date.ToString("dd HH:mm:ss yyyy") + "\n");
 
             if (Data.Category != null)
             {
-                SortWriter("category.", "", 10, Data.Category);
-                System.Write("category.length=" + Data.Category.Length.ToString() + "\n");
+                SortWriter("category.", "", 10, Data.Category, ref writer);
+                writer.Write("category.length=" + Data.Category.Length.ToString() + "\n");
             }
 
             if (Data.UID != null)
             {
-                SortWriter("uid.", "", 10, Data.UID);
-                System.Write("uid.length=" + Data.UID.Length.ToString() + "\n");
+                SortWriter("uid.", "", 10, Data.UID, ref writer);
+                writer.Write("uid.length=" + Data.UID.Length.ToString() + "\n");
             }
 
-            System.writer.Close();
+            writer.Close();
         }
 
-        public static void XMLReader(string file)
+        public static void XMLReader(ref AUTH Data, string file)
         {
-            System.doc = new XmlDocument();
-            System.doc.Load(file + ".xml");
-            System.XMLCompact = true;
-
-            XmlElement AuthDB = System.doc.DocumentElement;
-            if (AuthDB.Name == "AuthDB")
+            KKtXml Xml = new KKtXml();
+            Xml.OpenXml(file + ".xml", true);
+            foreach (XElement AuthDB in Xml.doc.Elements("AuthDB"))
             {
-                foreach (XmlAttribute Entry in AuthDB.Attributes)
+                foreach (XAttribute Entry in AuthDB.Attributes())
                     if (Entry.Name == "Signature")
-                        Data.Signature = BitConverter.ToInt32(Encoding.ASCII.GetBytes(Entry.Value), 0);
+                        Data.Signature = BitConverter.ToInt32(KKtText.ToASCII(Entry.Value), 0);
 
-                foreach (XmlNode Child0 in AuthDB.ChildNodes)
+                foreach (XElement Child0 in AuthDB.Elements())
                 {
                     if (Child0.Name == "Categories")
                     {
-                        foreach (XmlAttribute Entry in Child0.Attributes)
+                        foreach (XAttribute Entry in Child0.Attributes())
                             if (Entry.Name == "Length")
                                 Data.Category = new string[int.Parse(Entry.Value)];
                         int i = 0;
-                        foreach (XmlNode Category in Child0.ChildNodes)
+                        foreach (XElement Category in Child0.Elements())
                         {
                             Data.Category[i] = "";
-                            foreach (XmlAttribute Entry in Category.Attributes)
+                            foreach (XAttribute Entry in Category.Attributes())
                                 if (Entry.Name == "Value")
                                     Data.Category[i] = Entry.Value;
                             i++;
@@ -138,16 +135,16 @@ namespace PD_Tool
 
                     if (Child0.Name == "UIDs")
                     {
-                        foreach (XmlAttribute Entry in Child0.Attributes)
+                        foreach (XAttribute Entry in Child0.Attributes())
                             if (Entry.Name == "Length")
                                 Data.UID = new UID[int.Parse(Entry.Value)];
                         int i = 0;
-                        foreach (XmlNode UID in Child0.ChildNodes)
+                        foreach (XElement UID in Child0.Elements())
                         {
                             Data.UID[i].Category = "";
                             Data.UID[i].Size = -1;
                             Data.UID[i].Value = "";
-                            foreach (XmlAttribute Entry in UID.Attributes)
+                            foreach (XAttribute Entry in UID.Attributes())
                             {
                                 if (Entry.Name == "Category")
                                     Data.UID[i].Category = Entry.Value;
@@ -163,79 +160,66 @@ namespace PD_Tool
             }
         }
 
-        public static void XMLWriter(string file)
+        public static void XMLWriter(ref AUTH Data, string file)
         {
-            System.doc = new XmlDocument();
+            KKtXml Xml = new KKtXml();
             if (File.Exists(file + ".xml"))
                 File.Delete(file + ".xml");
-            System.doc.InsertBefore(System.doc.CreateXmlDeclaration("1.0",
-                "utf-8", null), System.doc.DocumentElement);
-            XmlElement AuthDB = System.doc.CreateElement("AuthDB");
-            System.XMLCompact = true;
+            XElement AuthDB = new XElement("AuthDB");
+            Xml.Compact = true;
 
-            System.XMLWriter(ref AuthDB, Encoding.ASCII.GetString(BitConverter.GetBytes(Data.Signature)), "Signature");
+            Xml.Writer(AuthDB, KKtText.ToASCII(BitConverter.GetBytes(Data.Signature)), "Signature");
             
             if (Data.Category != null)
             {
-                XmlElement Categories = System.doc.CreateElement("Categories");
-                System.XMLWriter(ref Categories, Data.Category.Length.ToString(), "Length");
+                XElement Categories = new XElement("Categories");
+                Xml.Writer(Categories, Data.Category.Length.ToString(), "Length");
                 foreach (string category in Data.Category)
                 {
-                    XmlElement Category = System.doc.CreateElement("Category");
-                    System.XMLWriter(ref Category, category, "Value");
-                    Categories.AppendChild(Category);
+                    XElement Category = new XElement("Category");
+                    Xml.Writer(Category, category, "Value");
+                    Categories.Add(Category);
                 }
-                AuthDB.AppendChild(Categories);
+                AuthDB.Add(Categories);
             }
 
             if (Data.UID != null)
             {
-                XmlElement UIDs = System.doc.CreateElement("UIDs");
-                System.XMLWriter(ref UIDs, Data.UID.Length.ToString(), "Length");
+                XElement UIDs = new XElement("UIDs");
+                Xml.Writer(UIDs, Data.UID.Length.ToString(), "Length");
                 foreach (UID uid in Data.UID)
                 {
-                    XmlElement UID = System.doc.CreateElement("UID");
+                    XElement UID = new XElement("UID");
                     if (uid.Category != "")
-                        System.XMLWriter(ref UID, uid.Category, "Category");
+                        Xml.Writer(UID, uid.Category, "Category");
                     if (uid.Size != -1)
-                        System.XMLWriter(ref UID, uid.Size.ToString(), "Size");
+                        Xml.Writer(UID, uid.Size.ToString(), "Size");
                     if (uid.Value != "")
-                        System.XMLWriter(ref UID, uid.Value, "Value");
-                    UIDs.AppendChild(UID);
+                        Xml.Writer(UID, uid.Value, "Value");
+                    UIDs.Add(UID);
                 }
-                AuthDB.AppendChild(UIDs);
+                AuthDB.Add(UIDs);
             }
 
-            System.doc.AppendChild(AuthDB);
-
-            XmlWriterSettings settings = new XmlWriterSettings
-            {
-                Encoding = Encoding.UTF8,
-                NewLineChars = "\n",
-                Indent = true,
-                IndentChars = " "
-            };
-            XmlWriter writer = XmlWriter.Create(file + ".xml", settings);
-            System.doc.Save(writer);
-            writer.Close();
-
+            Xml.doc.Add(AuthDB);
+            Xml.SaveXml(file + ".xml");
         }
 
-        static void SortWriter(string Template, string Origin, int I, string[] Data)
+        static void SortWriter(string Template, string Origin, int I1, string[] Data, ref KKtIO writer)
         {
             for (byte i0 = 0; i0 < 10; i0++)
             {
                 int i = int.Parse(Origin + i0.ToString());
                 if (Data.Length > i)
-                    System.Write(Template + i + ".value=" + Data[i] + "\n");
+                    writer.Write(Template + i + ".value=" + Data + "\n");
                 else
                     break;
-                if (Data.Length > I && i != 0)
-                    SortWriter(Template, i.ToString(), I * 10, Data);
+                if (Data.Length > I1 && i != 0)
+                    SortWriter(Template, i.ToString(), I1 * 10, Data, ref writer);
             }
         }
 
-        static void SortWriter(string Template, string Origin, int I, UID[] UID)
+        static void SortWriter(string Template, string Origin, int I1, UID[] UID, ref KKtIO writer)
         {
             for (byte i0 = 0; i0 < 10; i0++)
             {
@@ -243,29 +227,30 @@ namespace PD_Tool
                 if (UID.Length > i)
                 {
                     if (UID[i].Category != "")
-                        System.Write(Template + i + ".category=" + UID[i].Category + "\n");
+                        writer.Write(Template + i + ".category=" + UID[i].Category + "\n");
                     if (UID[i].Size != -1)
-                        System.Write(Template + i + ".size=" + UID[i].Size + "\n");
+                        writer.Write(Template + i + ".size=" + UID[i].Size + "\n");
                     if (UID[i].Value != "")
-                        System.Write(Template + i + ".value=" + UID[i].Value + "\n");
+                        writer.Write(Template + i + ".value=" + UID[i].Value + "\n");
                 }
                 else
                     break;
-                if (UID.Length > I && i != 0)
-                    SortWriter(Template, i.ToString(), I * 10, UID);
+                if (UID.Length > I1 && i != 0)
+                    SortWriter(Template, i.ToString(), I1 * 10, UID, ref writer);
             }
         }
 
-        struct AUTH
+        public struct AUTH
         {
             public int Signature;
             public string[] Category;
+            public string[] dataArray;
             public UID[] UID;
             public List<string> Name;
             public List<string> Value;
         }
-        
-        struct UID
+
+        public struct UID
         {
             public int Size;
             public string Category;

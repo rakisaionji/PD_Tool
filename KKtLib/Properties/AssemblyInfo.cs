@@ -1,15 +1,15 @@
 ﻿using System.Reflection;
 using System.Runtime.InteropServices;
 
-[assembly: AssemblyTitle("PD_Tool")]
-[assembly: AssemblyDescription("A simple tool for working with Project Diva DT/FT/F/F2/X files")]
+[assembly: AssemblyTitle("KKtLib")]
+[assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("PD_Tool")]
-[assembly: AssemblyCopyright("Copyright Kuji Kita © 2017-2019")]
+[assembly: AssemblyProduct("KKtLib")]
+[assembly: AssemblyCopyright("Copyright Kuji Kita © 2018-2019")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 [assembly: ComVisible(false)]
-[assembly: Guid("E116B9F5-674A-185C-3F97-C6A276D4CF2C")]
+[assembly: Guid("2BA7EFC6-91D1-8BBC-C487-06C7F36CC789")]
 [assembly: AssemblyVersion("0.4.4.0")]
 [assembly: AssemblyFileVersion("0.4.4.0")]
