@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Windows.Forms;
-using KKtA3DA = KKtLib.A3DA;
+using KKtA3DA = KKtLib.A3DA.A3DA;
 
 namespace PD_Tool.Tools
 {
@@ -29,10 +29,10 @@ namespace PD_Tool.Tools
                             break;
                         case ".xml":
                             A.XMLReader(filepath);
-                            KKtA3DA.IO = KKtLib.IO.KKtIO.OpenWriter(filepath + ".a3da", true);
-                            if (KKtA3DA.Data.Header.Signature == 0x5F5F5F41)
-                                A.A3DAWriter(filepath, false);
-                            else if (KKtA3DA.Data.Header.Signature == 0x5F5F5F43)
+                            A.IO = KKtLib.IO.KKtIO.OpenWriter(filepath + ".a3da", true);
+                            if (A.Data.Header.Signature == 0x5F5F5F41)
+                                A.A3DAWriter(filepath);
+                            else if (A.Data.Header.Signature == 0x5F5F5F43)
                                 A.A3DCWriter(filepath);
                             break;
                     }

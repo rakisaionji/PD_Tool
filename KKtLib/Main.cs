@@ -351,10 +351,10 @@ namespace KKtLib
             return Dict.ContainsKey(args[0]);
         }
 
-        public static bool FindValue(Dictionary<string, object> Dict, string args, ref bool value, char Split)
+        public static bool FindValue(Dictionary<string, object> Dict, string args, ref   bool value, char Split)
         { if (FindValue(Dict, args.Split(Split), out string val)) return bool.TryParse(val, out value);   return false; }
 
-        public static bool FindValue(Dictionary<string, object> Dict, string args, ref int value, char Split)
+        public static bool FindValue(Dictionary<string, object> Dict, string args, ref    int value, char Split)
         { if (FindValue(Dict, args.Split(Split), out string val)) return  int.TryParse(val, out value);   return false; }
 
         public static bool FindValue(Dictionary<string, object> Dict, string args, ref double value, char Split)
@@ -363,10 +363,10 @@ namespace KKtLib
         public static bool FindValue(Dictionary<string, object> Dict, string args, ref string value, char Split)
         { if (FindValue(Dict, args.Split(Split), out string val)) { value = val;           return true; } return false; }
 
-        public static bool FindValue(Dictionary<string, object> Dict, string args, ref bool value)
+        public static bool FindValue(Dictionary<string, object> Dict, string args, ref   bool value)
         { if (FindValue(Dict, args.Split('.'  ), out string val)) return bool.TryParse(val, out value);   return false; }
 
-        public static bool FindValue(Dictionary<string, object> Dict, string args, ref int value)
+        public static bool FindValue(Dictionary<string, object> Dict, string args, ref    int value)
         { if (FindValue(Dict, args.Split('.'  ), out string val)) return  int.TryParse(val, out value);   return false; }
 
         public static bool FindValue(Dictionary<string, object> Dict, string args, ref double value)
