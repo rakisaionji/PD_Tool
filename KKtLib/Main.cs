@@ -207,8 +207,8 @@ namespace KKtLib
             long mantissa = (bits & MantAnd);
             sbyte n = (sbyte)(((bits >> SignShift & 0x01) == 0) ? 1 : -1);
 
-            double m = (((long)1 << ExpShift) | mantissa) / ((long)2 << ExpShift);
-            double x = ((ulong)2 << (int)(exponent - (ExpAnd >> 1)));
+            double m = ((long)(1 << ExpShift) | mantissa) / Math.Pow(2, ExpShift);
+            double x = Math.Pow(2, exponent - (ExpAnd >> 1));
             double d = n * m * x;
             return d;
         }
@@ -236,7 +236,7 @@ namespace KKtLib
             if (val < 0)
                 Sign = 1;
             val = Math.Abs(val);
-            ulong Pow1 = 1;
+            double Pow1 = 1;
             ulong Pow2 = ((ulong)2 << ExpBits);
             ulong Pow3 = ((ulong)2 << ExpBits) - 1;
             double x = 0;
@@ -246,7 +246,7 @@ namespace KKtLib
             int i = 0;
             while (i < MaxPow && i > -(MaxPow - 1))
             {
-                Pow1 = (ulong)2 << i;
+                Pow1 = Math.Pow(2, i);
                 x = val / Pow1;
                 if (x >= 1 && x < 2)
                 {
@@ -268,7 +268,7 @@ namespace KKtLib
                     i++;
             }
 
-            ulong NaN = ((ulong)2 << MantBits) - 1 << ExpBits | (((ulong)2 << ExpBits) - 1);
+            ulong NaN = (((ulong)2 << MantBits) - 1) << ExpBits | (((ulong)2 << ExpBits) - 1);
             return Sign << (MantBits + ExpBits) | NaN;
         }
 
