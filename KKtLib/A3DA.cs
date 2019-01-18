@@ -952,15 +952,32 @@ namespace KKtLib.A3DA
                             IO.Write(Temp + "ep_type_post=", Key.EPTypePost);
                         if (Key.EPTypePre != -1)
                             IO.Write(Temp + "ep_type_pre=", Key.EPTypePre);
-                        if (Key.Length < 1000 && Data._.CompressF16 > 0)
+                        if (Key.Length < 1000)
                         {
                             for (i = 0; i < Key.Trans.Length; i++)
-                                Write(ref Key.Trans[i], Temp + "key." + SO[i]);
+                            {
+                                IO.Write(Temp + "key." + SO[i] + ".data=");
+                                if (Key.Trans[SO[i]].Type > 0)
+                                    IO.Write("(");
+                                IO.Write(KKtMain.ToString(Key.Trans[SO[i]].Frame));
+                                if (Key.Trans[SO[i]].Type > 0)
+                                {
+                                    IO.Write("," + KKtMain.ToString(Key.Trans[SO[i]].Value1));
+                                    if (Key.Trans[SO[i]].Type > 1)
+                                    {
+                                        IO.Write("," + KKtMain.ToString(Key.Trans[SO[i]].Value2));
+                                        if (Key.Trans[SO[i]].Type > 2)
+                                            IO.Write("," + KKtMain.ToString(Key.Trans[SO[i]].Value3));
+                                    }
+                                    IO.Write(")");
+                                }
+                                IO.Write("\n");
+                            }
                             IO.Write(Temp + "key.length=", Key.Length);
                         }
                         if (Key.Max != -1)
                             IO.Write(Temp + "max=", Key.Max);
-                        if (Key.Length >= 1000 && Data._.CompressF16 <= 0)
+                        if (Key.Length >= 1000)
                         {
                             Key.RawData = new Key.RawD();
                             for (i = 0; i < Key.Trans.Length; i++)
@@ -1012,23 +1029,6 @@ namespace KKtLib.A3DA
                     }
                 }
             }
-        }
-
-        public void Write(ref Key.Transform Trans, string Temp)
-        {
-            string Frame = KKtMain.ToString(Trans.Frame);
-            string V1 = KKtMain.ToString(Trans.Value1);
-            string V2 = KKtMain.ToString(Trans.Value2);
-            string V3 = KKtMain.ToString(Trans.Value3);
-            if (Trans.Type == 3)
-                IO.Write(Temp + ".data=(" + Frame + "," + V1 + "," + V2 + "," + V3 + ")\n");
-            else if (Trans.Type == 2)
-                IO.Write(Temp + ".data=(" + Frame + "," + V1 + "," + V2 + ")\n");
-            else if (Trans.Type == 1)
-                IO.Write(Temp + ".data=(" + Frame + "," + V1 + ")\n");
-            else
-                IO.Write(Temp + ".data=" + Frame + "\n");
-            IO.Write(Temp + ".type=" + Trans.Type + "\n");
         }
 
         private void A3DCReader()
