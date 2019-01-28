@@ -1,9 +1,8 @@
-﻿//Original: https://github.com/s117/DIVAFILE_Tool
-
-using System;
+﻿using System;
 using System.IO;
+using System.Text;
 using System.Security.Cryptography;
-using KKtIO = KKtLib.IO.KKtIO;
+using KKtIO = KKtLib.IO;
 using KKtMain = KKtLib.Main;
 using KKtText = KKtLib.Text;
 
@@ -67,7 +66,6 @@ namespace PD_Tool
                     Inalign[i] = In[i];
                 In = null;
                 byte[] encrypted = new byte[FileLenght];
-                reader.Close();
                 using (AesManaged crypto = new AesManaged())
                 {
                     crypto.Key = Key;

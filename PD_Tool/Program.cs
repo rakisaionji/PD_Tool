@@ -2,7 +2,7 @@
 using System.IO;
 using System.Globalization;
 using System.Collections.Generic;
-using KKtIO = KKtLib.IO.KKtIO;
+using KKtIO = KKtLib.IO;
 using KKtMain = KKtLib.Main;
 
 namespace PD_Tool

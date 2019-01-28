@@ -49,8 +49,8 @@ namespace KKtLib
                     time.Hours, time.Minutes, time.Seconds, time.Milliseconds);
         }
 
-        public static string Choose(int code, string filetype, out string[] FileNames)
-        { return Choose(code, filetype, out string InitialDirectory, out FileNames); }
+        public static string Choose(int code, string filetype, out string[] FileNames) =>
+            Choose(code, filetype, out string InitialDirectory, out FileNames);
 
         public static string Choose(int code, string filetype, out string InitialDirectory, out string[] FileNames)
         {
@@ -64,8 +64,7 @@ namespace KKtLib
                 switch (filetype)
                 {
                     case "a3da":
-                        ofd.Filter = "A3DA files (*.a3da, *.xml)|*.a3da;*.xml|" +
-                            "A3DA files (*.a3da)|*.a3da|XML files (*.xml)|*.xml";
+                        ofd.Filter = "A3DA files (*.a3da)|*.a3da";
                         break;
                     case "bin":
                         ofd.Filter = "BIN files (*.bin, *.xml)|*.bin;*.xml|" +
@@ -172,122 +171,62 @@ namespace KKtLib
             }
         }
 
-        public static POF0 AddPOF0(Header Header)
+        public static POF AddPOF(Header Header)
         {
-            POF0 POF0 = new POF0
+            POF POF = new POF
             {
                 Offsets = new List<int>(),
-                POF0Offsets = new List<long>(),
+                POFOffsets = new List<long>(),
                 Offset = Header.DataSize + Header.Lenght
             };
-            return POF0;
-        }
-        
-        public static double ToDouble(ushort bits)
-        {
-            if (bits == 0x0000)
-                return +0;
-            else if (bits == 0x8000)
-                return -0;
-            else if (bits == 0x7C00)
-                return  double.PositiveInfinity;
-            else if (bits == 0xFC00)
-                return  double.NegativeInfinity;
-            else if (bits >> 10 == 0x1F)
-                return  double.NaN;
-            else if (bits >> 10 == 0x3F)
-                return -double.NaN;
-            else
-                return ToDouble(bits, 10, 0x1F, 0x3FF, 15);
+            return POF;
         }
 
-        public static double ToDouble(long bits, int ExpShift, long ExpAnd, long MantAnd, int SignShift)
-        {
-            long exponent = ((bits >> ExpShift) & ExpAnd);
-            long mantissa = (bits & MantAnd);
-            sbyte n = (sbyte)(((bits >> SignShift & 0x01) == 0) ? 1 : -1);
+        public static string ToString(float? d, byte round)
+        { if (d == null) return null; return ToString((float)d, round); }
 
-            double m = ((long)(1 << ExpShift) | mantissa) / Math.Pow(2, ExpShift);
-            double x = Math.Pow(2, exponent - (ExpAnd >> 1));
-            double d = n * m * x;
-            return d;
-        }
+        public static string ToString(float? d)
+        { if (d == null) return null; return ToString((float)d); }
 
-        public static ushort ToHalf(double val)
-        {
-            if (val == +0)
-                return 0x0000;
-            else if (val == -0)
-                return 0x8000;
-            else if (val == double.NaN)
-                return 0x7FFF;
-            else if (val == -double.NaN)
-                return 0xFFFF;
-            else if (val == double.PositiveInfinity)
-                return 0x7C00;
-            else if (val == double.NegativeInfinity)
-                return 0xFC00;
-            return (ushort)ToDouble(val, 5, 10);
-        }
-
-        public static ulong ToDouble(double val, int MantBits, int ExpBits)
-        {
-            ulong Sign = 0;
-            if (val < 0)
-                Sign = 1;
-            val = Math.Abs(val);
-            double Pow1 = 1;
-            ulong Pow2 = ((ulong)2 << ExpBits);
-            ulong Pow3 = ((ulong)2 << ExpBits) - 1;
-            double x = 0;
-
-            int MaxPow = (2 << MantBits) - 1;
-
-            int i = 0;
-            while (i < MaxPow && i > -(MaxPow - 1))
-            {
-                Pow1 = Math.Pow(2, i);
-                x = val / Pow1;
-                if (x >= 1 && x < 2)
-                {
-                    double exponent_d = x * Pow2;
-                    ulong exponent_max = (ulong)Math.Ceiling(exponent_d);
-                    ulong exponent_min = (ulong)Math.Floor  (exponent_d);
-                    ulong exponent = 0;
-                    if (Math.Abs(val - exponent_max / Pow2 * Pow1) > Math.Abs(val - exponent_min / Pow2 * Pow1))
-                        exponent = exponent_max & Pow3;
-                    else
-                        exponent = exponent_min & Pow3;
-                    ulong mantissa = (ulong)(i + MaxPow - 1);
-                    ulong d = Sign << (MantBits + ExpBits) | mantissa << ExpBits | exponent;
-                    return d;
-                }
-                else if (val < 1)
-                    i--;
-                else
-                    i++;
-            }
-
-            ulong NaN = (((ulong)2 << MantBits) - 1) << ExpBits | (((ulong)2 << ExpBits) - 1);
-            return Sign << (MantBits + ExpBits) | NaN;
-        }
-
-        public static string ToString(double d, int val)
-        { return Math.Round(d, val).ToString().ToLower().Replace(
+        public static string ToString(float d, byte round)
+        { return Math.Round(d, round).ToString().ToLower().Replace(
             NumberFormatInfo.CurrentInfo.NumberDecimalSeparator, "."); }
 
-        public static string ToString(double d, bool Base64)
-        { if (Base64) return ToBase64(d); else
-          return            d      .ToString().ToLower().Replace(
+        public static string ToString(float d)
+        { return            d      .ToString().ToLower().Replace(
+            NumberFormatInfo.CurrentInfo.NumberDecimalSeparator, "."); }
+
+        public static string ToString(double? d, byte round)
+        { if (d == null) return null; return ToString((double)d, round); }
+
+        public static string ToString(double? d)
+        { if (d == null) return null; return ToString((double)d); }
+
+        public static string ToString(double d, byte round)
+        { return Math.Round(d, round).ToString().ToLower().Replace(
             NumberFormatInfo.CurrentInfo.NumberDecimalSeparator, "."); }
 
         public static string ToString(double d)
         { return            d      .ToString().ToLower().Replace(
             NumberFormatInfo.CurrentInfo.NumberDecimalSeparator, "."); }
 
+        public static  float ToSingle(string s)
+        { return  float.   Parse(s.Replace(".", NumberFormatInfo.
+            CurrentInfo.NumberDecimalSeparator)); }
+
+        public static   bool ToSingle(string s, out float? value)
+        { bool Val = ToSingle(s, out  float val); value = val; return Val; }
+
+        public static   bool ToSingle(string s, out float value)
+        { return  float.TryParse(s.Replace(".", NumberFormatInfo.
+            CurrentInfo.NumberDecimalSeparator), out value); }
+
         public static double ToDouble(string s)
         { return double.   Parse(s.Replace(".", NumberFormatInfo.
             CurrentInfo.NumberDecimalSeparator)); }
+
+        public static   bool ToDouble(string s, out double? value)
+        { bool Val = ToDouble(s, out double val); value = val; return Val; }
 
         public static   bool ToDouble(string s, out double value)
         { return double.TryParse(s.Replace(".", NumberFormatInfo.
@@ -352,28 +291,44 @@ namespace KKtLib
         }
 
         public static bool FindValue(Dictionary<string, object> Dict, string args, ref   bool value, char Split)
-        { if (FindValue(Dict, args.Split(Split), out string val)) return bool.TryParse(val, out value);   return false; }
+        { if (FindValue(Dict, args.Split(Split), out string val))
+                return bool.TryParse(val, out value);   return false; }
 
         public static bool FindValue(Dictionary<string, object> Dict, string args, ref    int value, char Split)
-        { if (FindValue(Dict, args.Split(Split), out string val)) return  int.TryParse(val, out value);   return false; }
+        { if (FindValue(Dict, args.Split(Split), out string val))
+                return  int.TryParse(val, out value);   return false; }
 
         public static bool FindValue(Dictionary<string, object> Dict, string args, ref double value, char Split)
-        { if (FindValue(Dict, args.Split(Split), out string val)) return      ToDouble(val, out value);   return false; }
+        { if (FindValue(Dict, args.Split(Split), out string val))
+                return      ToDouble(val, out value);   return false; }
 
         public static bool FindValue(Dictionary<string, object> Dict, string args, ref string value, char Split)
-        { if (FindValue(Dict, args.Split(Split), out string val)) { value = val;           return true; } return false; }
+        { if (FindValue(Dict, args.Split(Split), out string val))
+            { value = val;           return true; } return false; }
 
         public static bool FindValue(Dictionary<string, object> Dict, string args, ref   bool value)
-        { if (FindValue(Dict, args.Split('.'  ), out string val)) return bool.TryParse(val, out value);   return false; }
+        { if (FindValue(Dict, args.Split('.'  ), out string val))
+                return bool.TryParse(val, out value);   return false; }
 
         public static bool FindValue(Dictionary<string, object> Dict, string args, ref    int value)
-        { if (FindValue(Dict, args.Split('.'  ), out string val)) return  int.TryParse(val, out value);   return false; }
+        { if (FindValue(Dict, args.Split('.'  ), out string val))
+                return  int.TryParse(val, out value);   return false; }
 
         public static bool FindValue(Dictionary<string, object> Dict, string args, ref double value)
-        { if (FindValue(Dict, args.Split('.'  ), out string val)) return      ToDouble(val, out value);   return false; }
+        { if (FindValue(Dict, args.Split('.'  ), out string val))
+                return      ToDouble(val, out value);   return false; }
+
+        public static bool FindValue(Dictionary<string, object> Dict, string args, ref    int? value)
+        { if (FindValue(Dict, args.Split('.'), out string val)) { bool Val =  int.TryParse(val,
+            out  int _value); value = _value; return Val; }  return false; }
+
+        public static bool FindValue(Dictionary<string, object> Dict, string args, ref double? value)
+        { if (FindValue(Dict, args.Split('.'  ), out string val))
+                return      ToDouble(val, out value);   return false; }
 
         public static bool FindValue(Dictionary<string, object> Dict, string args, ref string value)
-        { if (FindValue(Dict, args.Split('.'  ), out string val)) { value = val;           return true; } return false; }
+        { if (FindValue(Dict, args.Split('.'  ), out string val))
+            { value = val;           return true; } return false; }
 
         public static bool FindValue(Dictionary<string, object> Dict, string[] args, out string value)
         {
@@ -406,7 +361,8 @@ namespace KKtLib
             return true;
         }
         
-        public static void GetDictionary(ref Dictionary<string, object> Dict, string args, string value, char Split)
+        public static void GetDictionary(ref Dictionary<string, object> Dict,
+            string args, string value, char Split)
         { GetDictionary(ref Dict, args.Split(Split), value); }
 
         public static void GetDictionary(ref Dictionary<string, object> Dict, string args, string value)
@@ -467,24 +423,29 @@ namespace KKtLib
             public Format Format;
         }
 
-        public enum Format
+        public enum Format : byte
         {
-            NULL = 0,
-            F    = 1,
-            F2LE = 2,
-            F2BE = 3,
-            X    = 4,
-            XHD  = 5,
+            NULL =  0,
+            DT   =  1,
+            DT2  =  2,
+            DTe  =  3,
+            F    =  4,
+            FT   =  5,
+            F2LE =  6,
+            F2BE =  7,
+            X    =  8,
+            XHD  =  9,
+            MGF  = 10,
         }
 
-        public struct POF0
+        public struct POF
         {
             public byte Type;
             public int Lenght;
             public int Offset;
             public int LastOffset;
             public List<int> Offsets;
-            public List<long> POF0Offsets;
+            public List<long> POFOffsets;
             public Header Header;
         }
 

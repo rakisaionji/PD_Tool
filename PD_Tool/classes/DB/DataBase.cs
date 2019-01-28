@@ -1,8 +1,7 @@
 ﻿using System;
 using System.IO;
-using System.Threading;
 using System.Globalization;
-using KKtIO = KKtLib.IO.KKtIO;
+using KKtIO = KKtLib.IO;
 using KKtMain = KKtLib.Main;
 
 namespace PD_Tool.DB

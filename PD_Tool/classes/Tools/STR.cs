@@ -1,11 +1,9 @@
 ﻿using System;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Xml.Linq;
 using System.Collections.Generic;
-using KKtIO = KKtLib.IO.KKtIO;
-using KKtXml = KKtLib.Xml.KKtXml;
+using KKtIO = KKtLib.IO;
+using KKtXml = KKtLib.Xml;
 using KKtMain = KKtLib.Main;
 using KKtText = KKtLib.Text;
 
@@ -48,16 +46,17 @@ namespace PD_Tool.Tools
         public struct String
         {
             public int ID;
+            public int StrOffset;
             public string Str;
         }
 
         public STRa()
         { }
 
-        public int Count;
-        public int Offset;
+        public long Count;
+        public long Offset;
         public List<String> STR;
-        public KKtMain.POF0 POF0;
+        public KKtMain.POF POF;
         public KKtMain.Header Header;
 
         public string filepath = "";
@@ -74,24 +73,30 @@ namespace PD_Tool.Tools
             {
                 Header = reader.ReadHeader(true);
                 STR = new List<String>();
-                POF0 = KKtMain.AddPOF0(Header);
+                POF = KKtMain.AddPOF(Header);
                 reader.Seek(Header.Lenght, 0);
 
-                Count = reader.ReadInt32(true);
-                Offset = reader.ReadInt32(true);
+                Count = reader.ReadInt32Endian();
+                Offset = reader.ReadInt32Endian();
                 reader.Seek(Offset, 0);
-
+                
                 for (int i = 0; i < Count; i++)
                 {
                     String Str = new String
                     {
-                        Str = KKtText.ToUTF8(reader.NullTerminated(ref POF0)),
-                        ID = reader.ReadInt32(true)
+                        StrOffset = reader.GetOffset(ref POF).ReadInt32Endian(),
+                        ID = reader.ReadInt32Endian()
                     };
                     STR.Add(Str);
                 }
-                reader.Seek(POF0.Offset, 0);
-                reader.POF0Reader(ref POF0);
+                for (int i = 0; i < Count; i++)
+                {
+                    reader.LongPosition = STR[i].StrOffset;
+                    STR[i] = new String { ID = STR[i].ID, Str = KKtText.
+                        ToUTF8(reader.NullTerminated()), StrOffset = STR[i].StrOffset};
+                }
+                reader.Seek(POF.Offset, 0);
+                reader.ReadPOF(ref POF);
             }
             else
             {
@@ -100,11 +105,11 @@ namespace PD_Tool.Tools
                 STR = new List<String>();
                 while (true)
                 {
-                    int a = reader.ReadInt32(true);
+                    int a = reader.ReadInt32Endian(true);
                     if (a != 0)
                     {
                         reader.Seek(-4, (SeekOrigin)1);
-                        STR.Add(new String { Str = KKtText.ToUTF8(reader.NullTerminated(ref POF0)), ID = i });
+                        STR.Add(new String { Str = KKtText.ToUTF8(reader.NullTerminated()), ID = i });
                         i++;
                     }
                     else
@@ -123,21 +128,21 @@ namespace PD_Tool.Tools
             uint CurrentOffset = 0;
             KKtIO writer = KKtIO.OpenWriter(filepath + ((int)Header.Format > 1 ? ".str" : ".bin"), true);
             writer.Format = Header.Format;
-            POF0 = new KKtMain.POF0 { Offsets = new List<int>(), POF0Offsets = new List<long>() };
+            POF = new KKtMain.POF { Offsets = new List<int>(), POFOffsets = new List<long>() };
             writer.IsBE = (int)writer.Format == 3;
 
             if ((int)writer.Format > 1)
             {
                 writer.Seek(0x40, 0);
-                writer.Write(Count, true);
-                writer.GetOffset(ref POF0);
-                writer.Write(0x80, true);
+                writer.WriteEndian(Count);
+                writer.GetOffset(ref POF);
+                writer.WriteEndian(0x80);
                 writer.Seek(0x80, 0);
                 for (int i = 0; i < STR.Count; i++)
                 {
-                    writer.GetOffset(ref POF0);
+                    writer.GetOffset(ref POF);
                     writer.Write(0x00);
-                    writer.Write(STR[i].ID, true);
+                    writer.WriteEndian(STR[i].ID);
                 }
                 writer.Align(16);
             }
@@ -179,7 +184,7 @@ namespace PD_Tool.Tools
                 writer.Seek(0, 0);
             for (int i1 = 0; i1 < Count; i1++)
             {
-                writer.Write(STRPos[i1], true);
+                writer.WriteEndian(STRPos[i1]);
                 if ((int)writer.Format > 1)
                     writer.Seek(4, (SeekOrigin)1);
             }
@@ -187,7 +192,7 @@ namespace PD_Tool.Tools
             if ((int)writer.Format > 1)
             {
                 writer.Seek(Offset, 0);
-                writer.Write(ref POF0, 1);
+                writer.Write(ref POF, 1);
                 CurrentOffset = (uint)writer.Length;
                 writer.WriteEOFC(0);
                 Header.IsBE = writer.IsBE;

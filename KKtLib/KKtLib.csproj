@@ -35,6 +35,8 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Types\HalfByte.cs" />
+    <Compile Include="Types\Half.cs" />
     <Compile Include="A3DA.cs" />
     <Compile Include="DSC.cs" />
     <Compile Include="FARC.cs" />

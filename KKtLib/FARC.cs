@@ -4,7 +4,7 @@ using System;
 using System.IO;
 using System.IO.Compression;
 using System.Security.Cryptography;
-using KKtIO = KKtLib.IO.KKtIO;
+using KKtIO = KKtLib.IO;
 
 namespace KKtLib
 {
@@ -40,17 +40,17 @@ namespace KKtLib
             {
                 KKtIO reader = KKtIO.OpenReader(file);
                 string directory = Path.GetFullPath(file).Replace(Path.GetExtension(file), "");
-                Signature = (Farc)reader.ReadInt32(true, true);
+                Signature = (Farc)reader.ReadInt32Endian(true);
                 if (Signature == Farc.FARC)
                 {
                     Directory.CreateDirectory(directory);
-                    int HeaderLenght = reader.ReadInt32(true, true);
-                    int Mode = reader.ReadInt32(true, true);
+                    int HeaderLenght = reader.ReadInt32Endian(true);
+                    int Mode = reader.ReadInt32Endian(true);
                     reader.ReadUInt32();
                     bool GZip = (Mode & 2) == 2;
                     bool ECB = (Mode & 4) == 4;
 
-                    int FARCType = reader.ReadInt32(true, true);
+                    int FARCType = reader.ReadInt32Endian(true);
                     FT = FARCType == 0x10;
                     bool CBC = !FT && FARCType != 0x40;
                     if (ECB && CBC)
@@ -69,18 +69,18 @@ namespace KKtLib
                         KKtIO CBCreader = new KKtIO(new MemoryStream(Header));
                         CBCreader.BaseStream.Seek(0, 0);
 
-                        FARCType = CBCreader.ReadInt32(true, true);
+                        FARCType = CBCreader.ReadInt32Endian(true);
                         FT = FARCType == 0x10;
-                        if (CBCreader.ReadInt32(true, true) == 1)
-                            Files = new FARCFile[CBCreader.ReadInt32(true, true)];
+                        if (CBCreader.ReadInt32Endian(true) == 1)
+                            Files = new FARCFile[CBCreader.ReadInt32Endian(true)];
                         CBCreader.ReadUInt32();
                         HeaderReader(HeaderLenght, ref Files, ref CBCreader);
                         CBCreader.Close();
                     }
                     else
                     {
-                        if (reader.ReadInt32(true, true) == 1)
-                            Files = new FARCFile[reader.ReadInt32(true, true)];
+                        if (reader.ReadInt32Endian(true) == 1)
+                            Files = new FARCFile[reader.ReadInt32Endian(true)];
                         reader.ReadUInt32();
                         HeaderReader(HeaderLenght, ref Files, ref reader);
                         reader.Close();
@@ -110,7 +110,6 @@ namespace KKtLib
                                     GetAes(false, null).CreateDecryptor(), CryptoStreamMode.Read))
                                     cryptoStream.Read(Files[i].Data, 0, FileSize);
                             Encrypted = true;
-                            stream.Close();
                         }
 
                         bool Compressed = false;
@@ -119,15 +118,17 @@ namespace KKtLib
                         {
                             GZipStream gZipStream;
                             if (Encrypted)
+                            {
                                 gZipStream = new GZipStream(new MemoryStream(
                                     Files[i].Data), CompressionMode.Decompress);
+                                stream.Close();
+                            }
                             else
                                 gZipStream = new GZipStream(stream, CompressionMode.Decompress);
                             Files[i].Data = new byte[Files[i].SizeUnc];
                             gZipStream.Read(Files[i].Data, 0, Files[i].SizeUnc);
 
                             Compressed = true;
-                            stream.Close();
                         }
 
                         if (!Encrypted && !Compressed)
@@ -149,7 +150,7 @@ namespace KKtLib
                 else if (Signature == Farc.FArC)
                 {
                     Directory.CreateDirectory(directory);
-                    int HeaderLength = reader.ReadInt32(true, true);
+                    int HeaderLength = reader.ReadInt32Endian(true);
                     reader.ReadUInt32();
                     HeaderReader(HeaderLength, ref Files, ref reader);
                     reader.Close();
@@ -164,8 +165,8 @@ namespace KKtLib
                         stream.Close();
 
                         using (MemoryStream memorystream = new MemoryStream(Files[i].Data))
-                        using (GZipStream gZipStream = new GZipStream(memorystream, CompressionMode.Decompress))
                         {
+                            GZipStream gZipStream = new GZipStream(memorystream, CompressionMode.Decompress);
                             Files[i].Data = new byte[Files[i].SizeUnc];
                             gZipStream.Read(Files[i].Data, 0, Files[i].SizeUnc);
                         }
@@ -179,7 +180,7 @@ namespace KKtLib
                 else if (Signature == Farc.FArc)
                 {
                     Directory.CreateDirectory(directory);
-                    int HeaderLength = reader.ReadInt32(true, true);
+                    int HeaderLength = reader.ReadInt32Endian(true);
                     reader.ReadUInt32();
 
                     HeaderReader(HeaderLength, ref Files, ref reader);
@@ -243,13 +244,13 @@ namespace KKtLib
             for (int i = 0; i < Files.Length; i++)
             {
                 Files[i].Name = Text.ToUTF8(reader.NullTerminated(0x00));
-                Files[i].Offset = reader.ReadInt32(true, true);
+                Files[i].Offset = reader.ReadInt32Endian(true);
                 if (Signature != Farc.FArc)
-                    Files[i].SizeComp = reader.ReadInt32(true, true);
-                Files[i].SizeUnc = reader.ReadInt32(true, true);
+                    Files[i].SizeComp = reader.ReadInt32Endian(true);
+                Files[i].SizeUnc = reader.ReadInt32Endian(true);
                 if (Signature == Farc.FARC && FT)
                 {
-                    LocalMode = reader.ReadInt32(true, true);
+                    LocalMode = reader.ReadInt32Endian(true);
                     Files[i].GZip = (LocalMode & 2) == 2;
                     Files[i].ECB = (LocalMode & 4) == 4;
                 }
@@ -259,7 +260,6 @@ namespace KKtLib
         public void Pack(string file)
         {
             Files = null;
-            Signature = Farc.FArC;
             FT = false;
             string[] files = Directory.GetFiles(file);
             Files = new FARCFile[files.Length];
@@ -301,7 +301,7 @@ namespace KKtLib
                 for (int i1 = 0; i1 < Path.GetFileName(Files[i].Name).Length +
                     (Signature == Farc.FArc ? 0x09 : 0x0D); i1++)
                     HeaderWriter.Write((byte)0x00);
-            writer.Write((uint)HeaderWriter.Length, true, true);
+            writer.WriteEndian((uint)HeaderWriter.Length, true);
             writer.Write(HeaderWriter.ToArray());
             HeaderWriter = null;
 
@@ -322,10 +322,10 @@ namespace KKtLib
             for (int i = 0; i < Files.Length; i++)
             {
                 writer.Write(Text.ToUTF8(Path.GetFileName(Files[i].Name) + "\0"));
-                writer.Write(Files[i].Offset, true, true);
+                writer.WriteEndian(Files[i].Offset, true);
                 if (Signature != Farc.FArc)
-                    writer.Write(Files[i].SizeComp, true, true);
-                writer.Write(Files[i].SizeUnc, true, true);
+                    writer.WriteEndian(Files[i].SizeComp, true);
+                writer.WriteEndian(Files[i].SizeUnc, true);
             }
             writer.Close();
         }

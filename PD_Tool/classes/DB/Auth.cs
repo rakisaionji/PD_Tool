@@ -2,12 +2,12 @@
 using System.IO;
 using System.Xml.Linq;
 using System.Collections.Generic;
-using KKtIO = KKtLib.IO.KKtIO;
-using KKtXml = KKtLib.Xml.KKtXml;
+using KKtIO = KKtLib.IO;
+using KKtXml = KKtLib.Xml;
 using KKtMain = KKtLib.Main;
 using KKtText = KKtLib.Text;
 
-namespace PD_Tool
+namespace PD_Tool.DB
 {
     class Auth
     {

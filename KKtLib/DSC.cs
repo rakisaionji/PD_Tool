@@ -2,8 +2,8 @@
 using System.IO;
 using System.Xml.Linq;
 using System.Collections.Generic;
-using KKtIO = KKtLib.IO.KKtIO;
-using KKtXml = KKtLib.Xml.KKtXml;
+using KKtIO = KKtLib.IO;
+using KKtXml = KKtLib.Xml;
 using KKtMain = KKtLib.Main;
 using KKtText = KKtLib.Text;
 
@@ -141,28 +141,26 @@ namespace KKtLib
 
             int ID;
             Func func;
-            List<int> Values = new List<int>();
             while (true)
             {
                 if (reader.Position >= diff.Header.Lenght + FileSize)
                     break;
-                ID = reader.ReadInt32(true);
+                ID = reader.ReadInt32Endian();
                 if (ID != 0x01)
                 {
                     func = new Func { Timestamp = -1, ID = new List<ID>() };
                     func.ID.Add(GetFunc(ID, ref Signature, ref diff.Header.ActualSignature, ref reader));
                     diff.Funcs.Add(func);
-                    ID = reader.ReadInt32(true);
+                    ID = reader.ReadInt32Endian();
                 }
                 if (ID == 0x01)
                 {
-                    func = new Func { Timestamp = reader.ReadInt32(true), ID = new List<ID>() };
+                    func = new Func { Timestamp = reader.ReadInt32Endian(), ID = new List<ID>() };
                     while (true)
                     {
                         if (reader.Position >= diff.Header.Lenght + FileSize)
                             break;
-                        Values = new List<int>();
-                        ID = reader.ReadInt32(true);
+                        ID = reader.ReadInt32Endian();
                         if (ID == 0x01)
                         {
                             reader.Seek(-4, SeekOrigin.Current);
@@ -175,20 +173,20 @@ namespace KKtLib
 
                         if (reader.Position >= diff.Header.Lenght + FileSize)
                             break;
-                        if (ID == 0x0 || ID == 0x20 || ID == 0x53524E45 || ID == 0x43464F45)
+                        if (ID == 0x0 || ID == 0x53524E45 || ID == 0x43464F45)
                             break;
                     }
                     diff.Funcs.Add(func);
                     if (reader.Position >= diff.Header.Lenght + FileSize)
                         break;
-                    if (ID == 0x0 || ID == 0x20 || ID == 0x53524E45 || ID == 0x43464F45)
+                    if (ID == 0x0 || ID == 0x53524E45 || ID == 0x43464F45)
                         break;
                 }
             }
             if (Signature == 0x13120420 && IsX)
                 while (reader.Position < reader.Length)
                 {
-                    ID = reader.ReadInt32(true);
+                    ID = reader.ReadInt32Endian();
                     if ((ID == 0x53524E45 && !diff.PS4) || (IsPS4 && !diff.PS4))
                     {
                         diff.PS4 = IsPS4 = true;
@@ -211,7 +209,7 @@ namespace KKtLib
                     Signature = actualSignature = 0x10120116;
                     FuncSize = 7;
                 }
-                Values.Add(reader.ReadInt32(true));
+                Values.Add(reader.ReadInt32Endian());
             }
             return new ID { Id = ID, Values = Values };
         }
@@ -397,8 +395,8 @@ namespace KKtLib
                         writer.Write(diff.Header.Signature);
                         writer.Write(0x00);
                         writer.Write((long)0x00);
-                        writer.Write(diff.Header.Signature, true);
-                        writer.Write(diff.DSCType, true);
+                        writer.WriteEndian(diff.Header.Signature);
+                        writer.WriteEndian(diff.DSCType);
                         break;
                     default:
                         writer.Write(diff.Header.Signature);
@@ -410,14 +408,14 @@ namespace KKtLib
                     {
                         if (func.Timestamp != -1)
                         {
-                            writer.Write(0x01, true);
-                            writer.Write(func.Timestamp, true);
+                            writer.WriteEndian(0x01);
+                            writer.WriteEndian(func.Timestamp);
                         }
                         foreach (ID id in func.ID)
                         {
-                            writer.Write(id.Id, true);
+                            writer.WriteEndian(id.Id);
                             foreach (int value in id.Values)
-                                writer.Write(value, true);
+                                writer.WriteEndian(value);
                         }
                     }
                 if (writer.Position % 0x10 != 0)
@@ -444,6 +442,166 @@ namespace KKtLib
                 }
                 writer.Close();
             }
+        }
+
+        public void DSCConverter()
+        {
+            DSCEntry newdiff;
+            //Func Func;
+            //ID ID;
+
+            List<DSCEntry> Diff = new List<DSCEntry>();
+            List<Func> Funcs = new List<Func>();
+            foreach (DSCEntry diff in Diff)
+            {
+                newdiff = new DSCEntry
+                {
+                    Diff = diff.Diff,
+                    DSCType = diff.DSCType,
+                    Extra = diff.Extra,
+                    Funcs = diff.Funcs,
+                    Header = diff.Header,
+                    PS4 = diff.PS4,
+                    Type = diff.Type,
+                    X = diff.X,
+                };
+                switch (diff.Header.Signature)
+                {
+                    case 0x00000000:
+                        break;
+                    case 0x11021719:
+                    case 0x11032818:
+                    case 0x11062018:
+                        break;
+                    case 0x12020220:
+                        break;
+                    case 0x13120420:
+                    case 0x20041213:
+                        switch (format)
+                        {
+                            case 1:
+                            case 2:
+                            case 3:
+                            case 4:
+                                newdiff.Funcs = new List<Func>();
+                                foreach (Func func in diff.Funcs)
+                                {
+                                    Func Func = new Func { ID = new List<ID>(), Timestamp = func.Timestamp };
+                                    foreach (ID Id in func.ID)
+                                    {
+                                        Enum.TryParse(((F.FuncID)Id.Id).ToString(), out F2.FuncID NewId);
+                                        ID ID = new ID { Values = Id.Values, Id = (int)NewId };
+                                        switch (ID.Id)
+                                        {
+                                            case 0x06:
+                                                ID.Values = new List<int>();
+                                                for (int i = 0; i < 11; i++)
+                                                    ID.Values.Add(Id.Values[i]);
+                                                break;
+                                            case 0x51:
+                                                ID.Values = new List<int>();
+                                                for (int i = 0; i < 22; i++)
+                                                    ID.Values.Add(Id.Values[i]);
+                                                ID.Values.Add(0);
+                                                ID.Values.Add(0);
+                                                break;
+                                        }
+                                        if (((F.FuncID)Id.Id).ToString() == ((F2.FuncID)ID.Id).ToString())
+                                            Func.ID.Add(ID);
+                                    }
+                                    newdiff.Funcs.Add(Func);
+                                }
+                                newdiff.Funcs = Retargeter(newdiff.Funcs, newdiff.Header.Signature,
+                                    diff.Header.Signature, diff.Header.ActualSignature, diff.X);
+                                break;
+                            case 5:
+                            case 6:
+                                if (diff.X)
+                                {
+
+                                }
+                                else
+                                {
+                                    if (format == 5)
+                                        newdiff.Header.Signature = 0x20041213;
+                                    else if (format == 6)
+                                        newdiff.Header.Signature = 0x13120420;
+                                }
+                                break;
+                            case 7:
+                            case 8:
+                                if (format == 7 && diff.PS4)
+                                    newdiff.PS4 = false;
+                                else if (format == 8 && !diff.PS4)
+                                    newdiff.PS4 = true;
+                                else if (format > 6 && !diff.X)
+                                    newdiff.Funcs = ToX(diff, 0x13120420);
+                                newdiff.X = true;
+                                newdiff.Header.Signature = 0x13120420;
+                                newdiff.Funcs = diff.Funcs;
+                                break;
+                        }
+                        break;
+                    case 0x10120116:
+                    case 0x13013121:
+                    case 0x13081522:
+                    case 0x13122519:
+                    case 0x14012316:
+                    case 0x14031318:
+                    case 0x14050921:
+                    case 0x15021718:
+                    case 0x15122517:
+                    case 0x16030121:
+                        break;
+                }
+
+                Diff.Add(newdiff);
+            }
+            this.Diff = Diff;
+        }
+
+        public List<Func> ToX(DSCEntry diff, int NewSignature)
+        {
+            List<Func> Funcs = new List<Func>();
+            foreach (Func func in diff.Funcs)
+            {
+                Func Func = new Func { ID = new List<ID>(), Timestamp = func.Timestamp };
+                foreach (ID Id in func.ID)
+                    switch (diff.Header.ActualSignature)
+                    {
+                        case 0x20041213:
+                        case 0x13120420:
+                            if (Id.Id != 0x4a || Id.Id != 0x4B)
+                            {
+                                Enum.TryParse(((F2.FuncID)Id.Id).ToString(), out X.FuncID NewId);
+                                ID ID = new ID { Values = Id.Values, Id = (int)NewId };
+                                if (((F2.FuncID)Id.Id).ToString() == ((X.FuncID)ID.Id).ToString())
+                                    Func.ID.Add(ID);
+                            }
+                            break;
+                    }
+                Funcs.Add(Func);
+            }
+            return Retargeter(Funcs, NewSignature, diff.Header.Signature,
+                diff.Header.ActualSignature, diff.X);
+        }
+
+        public List<Func> Retargeter(List<Func> Funcs, int NewSignature, int Signature, int actualSignature, bool IsX)
+        {
+            List<Func> FuncsOut = new List<Func>();
+            if (actualSignature == 0)
+                actualSignature = Signature;
+            int FuncSize = GetFuncSize(0x06, Signature);
+            switch (Signature)
+            {
+                case 0x13120420:
+                    if (IsX && format == 6)
+                    {
+                    }
+                    break;
+            }
+
+            return FuncsOut;
         }
 
         public void XMLReader(string filebase)
@@ -742,7 +900,7 @@ namespace KKtLib
             NoteEvent,
         }
 
-        public class DT
+        class DT
         {
             public static int GetFuncSize(int ID)
             {
@@ -841,7 +999,7 @@ namespace KKtLib
             }
         }
 
-        public class DT2
+        class DT2
         {
             public static int GetFuncSize(int ID, int Signature)
             {
@@ -1000,7 +1158,7 @@ namespace KKtLib
             }
         }
 
-        public class F
+        class F
         {
             public static int GetFuncSize(int ID)
             {
@@ -1208,7 +1366,7 @@ namespace KKtLib
             }
         }
 
-        public class FT
+        class FT
         {
             public static int GetFuncSize(int ID)
             {
@@ -1463,7 +1621,7 @@ namespace KKtLib
             }
         }
 
-        public class F2
+        class F2
         {
             public static int GetFuncSize(int ID)
             {
@@ -1723,7 +1881,7 @@ namespace KKtLib
             }
         }
 
-        public class X
+        class X
         {
             public static int GetFuncSize(int ID)
             {
