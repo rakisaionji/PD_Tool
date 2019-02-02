@@ -1237,7 +1237,7 @@ namespace KKtLib.A3DA
             if (A3DCOpt)
                 UsedValues = new Values();
 
-            if (Data.Header.Format != Main.Format.F)
+            if (Data.Header.Format > Main.Format.FT)
             {
                 int a = int.Parse(Data._.ConverterVersion);
                 int b = BitConverter.ToInt32(Text.ToUTF8(Data._.FileName), 0);
@@ -1258,6 +1258,7 @@ namespace KKtLib.A3DA
                 IO.Write(0x00);
                 IO.Write(0x00);
             }
+            else Data._.CompressF16 = null;
 
             int A3DCStart = IO.Position;
             IO.Seek(0x40, SeekOrigin.Current);

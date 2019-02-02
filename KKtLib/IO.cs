@@ -19,7 +19,7 @@ namespace KKtLib
         private Main.Format _format = Main.Format.NULL;
 
         public Main.Format Format
-        {   get { return _format; }
+        {   get =>       _format;
             set {        _format = value;
                   IsBE = _format == Main.Format.F2BE;
                   IsX  = _format == Main.Format.X || _format == Main.Format.XHD; } }
@@ -27,11 +27,11 @@ namespace KKtLib
         public bool IsBE = false;
         public bool IsX  = false;
 
-        public  int     Length { get { return (int)Stream.Length; } set { Stream.SetLength(value); } }
-        public long LongLength { get { return      Stream.Length; } set { Stream.SetLength(value); } }
+        public  int       Length { get => (int)Stream.  Length; set => Stream.SetLength(value   ); }
+        public long   LongLength { get =>      Stream.  Length; set => Stream.SetLength(value   ); }
+        public  int     Position { get => (int)Stream.Position; set =>             Seek(value, 0); }
+        public long LongPosition { get =>      Stream.Position; set =>             Seek(value, 0); }
 
-        public  int     Position { get { return (int)Stream.Position; } set { Seek(value, 0); } }
-        public long LongPosition { get { return      Stream.Position; } set { Seek(value, 0); } }
         public long XOffset = 0;
 
         public bool CanRead    => Stream.CanRead;
@@ -43,7 +43,7 @@ namespace KKtLib
         public IO(Stream output           ) => KKtIOOpener(output     , false);
         public IO(Stream output, bool isBE) => KKtIOOpener(output     , IsBE );
 
-        public void KKtIOOpener(Stream output, bool isBE)
+        private void KKtIOOpener(Stream output, bool isBE)
         {
             CurrentBitReader = 8;
             CurrentValReader = CurrentBitWriter = CurrentValWriter = 0;
@@ -302,18 +302,13 @@ namespace KKtLib
             for (byte i = 0; i < Bits; i++)
             {
                 Val = (byte)((val >> (byte)(Bits - 1 - i)) & 0x1);
-                Write(Val, 0);
-            }
-        }
-
-        private void Write(byte val, byte Bit)
-        {
-            CurrentValWriter |= (byte)(val << (7 - CurrentBitWriter));
-            CurrentBitWriter++;
-            if (CurrentBitWriter > 7)
-            {
-                Stream.WriteByte(CurrentValWriter);
-                CurrentValWriter = CurrentBitWriter = 0;
+                CurrentValWriter |= (byte)(Val << (7 - CurrentBitWriter));
+                CurrentBitWriter++;
+                if (CurrentBitWriter > 7)
+                {
+                    Stream.WriteByte(CurrentValWriter);
+                    CurrentValWriter = CurrentBitWriter = 0;
+                }
             }
         }
 
@@ -321,40 +316,29 @@ namespace KKtLib
         {
             if (CurrentBitWriter > 0)
             {
-                if (CurrentValWriter > 0)
-                    Stream.WriteByte(CurrentValWriter);
+                if (CurrentValWriter > 0) Stream.WriteByte(CurrentValWriter);
                 CurrentValWriter = CurrentBitWriter = 0;
             }
         }
 
         public double ReadWAVSample(short Bytes, ushort Format)
         {
-            if (Bytes == 2)
-                return  ReadInt16() / (double)0x00008000;
-            else if (Bytes == 3)
-                return  ReadInt24() / (double)0x00800000;
-            else if (Bytes == 4 && Format == 0x01)
-                return  ReadInt32() / (double)0x80000000;
-            else if (Bytes == 4 && Format == 0x03)
-                return ReadSingle();
-            else if (Bytes == 8 && Format == 0x03)
-                return ReadDouble();
-            return 0;
+                 if (Bytes == 2)                   return  ReadInt16() / (double)0x00008000;
+            else if (Bytes == 3)                   return  ReadInt24() / (double)0x00800000;
+            else if (Bytes == 4 && Format == 0x01) return  ReadInt32() / (double)0x80000000;
+            else if (Bytes == 4 && Format == 0x03) return ReadSingle();
+            else if (Bytes == 8 && Format == 0x03) return ReadDouble();
+            else                                   return 0;
         }
 
         public void Write(double Sample, short Bytes, ushort Format)
         {
-            if (Bytes == 2)
-                Write  ((ushort)(Sample * 0x00008000));
-            else if (Bytes == 3)
-                ToArray(3, (int)(Sample * 0x00800000));
-            else if (Bytes == 4 && Format == 0x01)
-                Write  ((   int)(Sample * 0x80000000));
-            else if (Bytes == 4 && Format == 0x03)
-                Write  ((float)  Sample);
-            else if (Bytes == 8 && Format == 0x03)
-                Write  (         Sample);
-            }
+                 if (Bytes == 2)                   Write  ((ushort)(Sample * 0x00008000));
+            else if (Bytes == 3)                   ToArray(3, (int)(Sample * 0x00800000));
+            else if (Bytes == 4 && Format == 0x01) Write  ((   int)(Sample * 0x80000000));
+            else if (Bytes == 4 && Format == 0x03) Write  ((float)  Sample);
+            else if (Bytes == 8 && Format == 0x03) Write  (         Sample);
+        }
 
         public Main.WAVHeader ReadWAVHeader()
         {
@@ -372,8 +356,7 @@ namespace KKtLib
             {
                 Header.Channels = ReadInt16();
                 Header.SampleRate = ReadInt32();
-                ReadInt32();
-                ReadInt16();
+                ReadInt32(); ReadInt16();
                 Header.Bytes = (short)(ReadInt16() / 0x08);
                 if ((Header.Bytes < 2 || Header.Bytes > 4) && Header.Bytes != 8)
                     return Header;
@@ -486,6 +469,7 @@ namespace KKtLib
 
         public Main.Header ReadHeader()
         {
+            long Position = LongPosition;
             Main.Header Header = new Main.Header
             { Format = Main.Format.F2LE, Signature = ReadInt32(),
                 DataSize = ReadInt32(), Lenght = ReadInt32() };
@@ -495,7 +479,7 @@ namespace KKtLib
             Header.SectionSize = ReadInt32();
             IsBE = Header.IsBE;
             Format = Header.Format;
-            Seek(Header.Lenght, SeekOrigin.Current);
+            LongPosition = Position + Header.Lenght;
             Header.Signature = ReadInt32Endian();
             return Header;
         }
