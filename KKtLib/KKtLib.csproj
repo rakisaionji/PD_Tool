@@ -35,6 +35,8 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="MessagePack\IO.cs" />
+    <Compile Include="MessagePack\MsgPack.cs" />
     <Compile Include="Types\HalfByte.cs" />
     <Compile Include="Types\Half.cs" />
     <Compile Include="A3DA.cs" />

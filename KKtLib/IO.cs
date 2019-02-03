@@ -38,13 +38,11 @@ namespace KKtLib
         public bool CanSeek    => Stream.CanSeek;
         public bool CanTimeout => Stream.CanTimeout;
         public bool CanWrite   => Stream.CanWrite;
-
-        public IO(                        ) => KKtIOOpener(Stream.Null, false);
-        public IO(Stream output           ) => KKtIOOpener(output     , false);
-        public IO(Stream output, bool isBE) => KKtIOOpener(output     , IsBE );
-
-        private void KKtIOOpener(Stream output, bool isBE)
+        
+        public IO(Stream output = null, bool isBE = false)
         {
+            if (output == null)
+                output = Stream.Null;
             CurrentBitReader = 8;
             CurrentValReader = CurrentBitWriter = CurrentValWriter = 0;
             Stream = output;

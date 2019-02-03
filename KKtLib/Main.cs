@@ -64,7 +64,8 @@ namespace KKtLib
                 switch (filetype)
                 {
                     case "a3da":
-                        ofd.Filter = "A3DA files (*.a3da)|*.a3da";
+                        ofd.Filter = "A3DA files (*.a3da, *.mp)|*.a3da;*.mp|" +
+                            "A3DA files (*.a3da)|*.a3da|MessagePack files (*.mp)|*.mp";
                         break;
                     case "bin":
                         ofd.Filter = "BIN files (*.bin, *.xml)|*.bin;*.xml|" +

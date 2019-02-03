@@ -2,6 +2,9 @@
 using System.IO;
 using System.Collections.Generic;
 using KKtIO = KKtLib.IO;
+using MP = KKtLib.MsgPack.MsgPack;
+using MPIO = KKtLib.MsgPack.IO;
+using MPTypes = KKtLib.MsgPack.MsgPack.Types;
 
 namespace KKtLib.A3DA
 {
@@ -23,6 +26,7 @@ namespace KKtLib.A3DA
         private string nameView;
         private string value;
         private string[] dataArray;
+        private MP MsgPack;
         private Values UsedValues;
         private Dictionary<string, object> Dict;
 
@@ -160,7 +164,7 @@ namespace KKtLib.A3DA
             if (Main.FindValue(Dict, "play_control.begin", ref value))
                 Data.PlayControl.Begin = Main.ToDouble(value);
             if (Main.FindValue(Dict, "play_control.div", ref value))
-                Data.PlayControl.FPS = Main.ToDouble(value);
+                Data.PlayControl.Div = Main.ToDouble(value);
             if (Main.FindValue(Dict, "play_control.fps", ref value))
                 Data.PlayControl.FPS = Main.ToDouble(value);
             if (Main.FindValue(Dict, "play_control.offset", ref value))
@@ -1567,7 +1571,1027 @@ namespace KKtLib.A3DA
             IO.Write(Key.Y.BinOffset);
             IO.Write(Key.Z.BinOffset);
         }
-  
+
+        public void MsgPackReader(string file)
+        {
+            int n = 0;
+            int i19 = 0;
+            int i18 = 0;
+            MPIO IO = new MPIO(KKtIO.OpenReader(file + ".mp"));
+            MsgPack = (MP)IO.Read();
+            IO.Close();
+            IO = null;
+            if (MsgPack.Element("A3D", out MP A3D))
+            {
+                Enum.TryParse(A3D.ReadString("Format"), out Data.Header.Format);
+                MP Temp = new MP();
+
+                if (A3D.Element("_", out Temp))
+                {
+                    Data._.CompressF16 = Temp.ReadNInt32("CompressF16");
+                    Data._.ConverterVersion = Temp.ReadString("ConverterVersion");
+                    Data._.FileName = Temp.ReadString("FileName");
+                    Data._.PropertyVersion = Temp.ReadString("PropertyVersion");
+                }
+
+                if (A3D.Element("Ambient", out Temp, typeof(object[])))
+                {
+                    Data.Ambient = new Ambient[((object[])Temp.Object).Length];
+                    MP Ambient2 = new MP();
+
+                    for (n = 0; n < Data.Ambient.Length; n++)
+                        if (Temp[n].GetType() == typeof(MP))
+                        {
+                            Data.Ambient[n] = new Ambient();
+                            Ambient2 = (MP)Temp[n];
+                            Data.Ambient[n].Name = Ambient2.ReadString("Name");
+                            ReadMP(ref Data.Ambient[n].LightDiffuse, Ambient2, "   LightDiffuse");
+                            ReadMP(ref Data.Ambient[n].RimLightDiffuse, Ambient2, "RimLightDiffuse");
+                        }
+                }
+
+                if (A3D.Element("Camera", out Temp))
+                {
+                    if (Temp.Element("Auxiliary", out MP Auxiliary))
+                    {
+                        Data.Camera.Auxiliary.Boolean = true;
+                        ReadMP(ref Data.Camera.Auxiliary.AutoExposure, Auxiliary, "AutoExposure");
+                        ReadMP(ref Data.Camera.Auxiliary.Exposure, Auxiliary, "Exposure");
+                        ReadMP(ref Data.Camera.Auxiliary.Gamma, Auxiliary, "Gamma");
+                        ReadMP(ref Data.Camera.Auxiliary.GammaRate, Auxiliary, "GammaRate");
+                        ReadMP(ref Data.Camera.Auxiliary.Saturate, Auxiliary, "Saturate");
+                    }
+
+                    if (Temp.Element("Root", out MP Root, typeof(object[])))
+                    {
+                        Data.Camera.Root = new CameraRoot[((object[])Root.Object).Length];
+                        MP _Root2 = new MP();
+                        for (n = 0; n < Data.Camera.Root.Length; n++)
+                            if (Root[n].GetType() == typeof(MP))
+                            {
+                                Data.Camera.Root[n] = new CameraRoot();
+                                _Root2 = (MP)Root[n];
+                                ReadMP(ref Data.Camera.Root[n].MT, _Root2);
+                                ReadMP(ref Data.Camera.Root[n].Interest, _Root2, "Interest");
+                                if (_Root2.Element("ViewPoint", out MP ViewPoint))
+                                {
+                                    Data.Camera.Root[n].ViewPoint.Aspect = ViewPoint.ReadNDouble("Aspect");
+                                    Data.Camera.Root[n].ViewPoint.CameraApertureH = ViewPoint.ReadNDouble("CameraApertureH");
+                                    Data.Camera.Root[n].ViewPoint.CameraApertureW = ViewPoint.ReadNDouble("CameraApertureW");
+                                    Data.Camera.Root[n].ViewPoint.FOVHorizontal = ViewPoint.ReadNDouble("FOVHorizontal");
+                                    ReadMP(ref Data.Camera.Root[n].ViewPoint.FocalLength, ViewPoint, "FocalLength");
+                                    ReadMP(ref Data.Camera.Root[n].ViewPoint.FOV, ViewPoint, "FOV");
+                                    ReadMP(ref Data.Camera.Root[n].ViewPoint.Roll, ViewPoint, "Roll");
+                                    ReadMP(ref Data.Camera.Root[n].ViewPoint.MT, ViewPoint);
+                                }
+                            }
+                    }
+                }
+
+                if (A3D.Element("Chara", out Temp, typeof(object[])))
+                {
+                    Data.Chara = new ModelTransform[((object[])Temp.Object).Length];
+                    for (n = 0; n < Data.Chara.Length; n++)
+                        if (Temp[n].GetType() == typeof(MP))
+                        {
+                            Data.Chara[n] = new ModelTransform();
+                            ReadMP(ref Data.Chara[n], (MP)Temp[n]);
+                        }
+                }
+
+                if (A3D.Element("Curve", out Temp, typeof(object[])))
+                {
+                    Data.Curve = new Curve[((object[])Temp.Object).Length];
+                    MP Curve2 = new MP();
+                    for (n = 0; n < Data.Curve.Length; n++)
+                        if (Temp[n].GetType() == typeof(MP))
+                        {
+                            Data.Curve[n] = new Curve();
+                            Curve2 = (MP)Temp[n];
+                            Data.Curve[n].Name = Curve2.ReadString("Name");
+                            ReadMP(ref Data.Curve[n].CV, Curve2, "CV");
+                        }
+                }
+
+                if (A3D.Element("DOF", out Temp, typeof(object[])))
+                {
+                    Data.DOF.Name = Temp.ReadString("Name");
+                    ReadMP(ref Data.DOF.MT, Temp);
+                }
+
+                if (A3D.Element("Event", out Temp, typeof(object[])))
+                {
+                    Data.Event = new Event[((object[])Temp.Object).Length];
+                    MP Event2 = new MP();
+                    for (n = 0; n < Data.Event.Length; n++)
+                        if (Temp[n].GetType() == typeof(MP))
+                        {
+                            Data.Event[n] = new Event();
+                            Event2 = (MP)Temp[n];
+                            Data.Event[n].Begin = Event2.ReadNDouble("Begin");
+                            Data.Event[n].ClipBegin = Event2.ReadNDouble("ClipBegin");
+                            Data.Event[n].ClipEnd = Event2.ReadNDouble("ClipEnd");
+                            Data.Event[n].End = Event2.ReadNDouble("End");
+                            Data.Event[n].Name = Event2.ReadString("Name");
+                            Data.Event[n].Param1 = Event2.ReadString("Param1");
+                            Data.Event[n].Ref = Event2.ReadString("Ref");
+                            Data.Event[n].TimeRefScale = Event2.ReadNDouble("TimeRefScale");
+                            Data.Event[n].Type = Event2.ReadNInt32("Type");
+                        }
+                }
+
+                if (A3D.Element("Fog", out Temp, typeof(object[])))
+                {
+                    Data.Fog = new Fog[((object[])Temp.Object).Length];
+                    MP Fog2 = new MP();
+                    for (n = 0; n < Data.Fog.Length; n++)
+                        if (Temp[n].GetType() == typeof(MP))
+                        {
+                            Data.Fog[n] = new Fog();
+                            Fog2 = (MP)Temp[n];
+                            Data.Fog[n].Id = Fog2.ReadNInt32("Id");
+                            ReadMP(ref Data.Fog[n].Density, Fog2, "Density");
+                            ReadMP(ref Data.Fog[n].Diffuse, Fog2, "Diffuse");
+                            ReadMP(ref Data.Fog[n].End, Fog2, "End");
+                            ReadMP(ref Data.Fog[n].Start, Fog2, "Start");
+                        }
+                }
+
+                if (A3D.Element("Light", out Temp, typeof(object[])))
+                {
+                    Data.Light = new Light[((object[])Temp.Object).Length];
+                    MP Light2 = new MP();
+                    for (n = 0; n < Data.Light.Length; n++)
+                        if (Temp[n].GetType() == typeof(MP))
+                        {
+                            Data.Light[n] = new Light();
+                            Light2 = (MP)Temp[n];
+                            Data.Light[n].Id = Light2.ReadNInt32("Id");
+                            Data.Light[n].Name = Light2.ReadString("Name");
+                            Data.Light[n].Type = Light2.ReadString("Type");
+                            ReadMP(ref Data.Light[n].Ambient, Light2, "Ambient");
+                            ReadMP(ref Data.Light[n].Diffuse, Light2, "Diffuse");
+                            ReadMP(ref Data.Light[n].Incandescence, Light2, "Incandescence");
+                            ReadMP(ref Data.Light[n].Position, Light2, "Position");
+                            ReadMP(ref Data.Light[n].Specular, Light2, "Specular");
+                            ReadMP(ref Data.Light[n].SpotDirection, Light2, "SpotDirection");
+                        }
+                }
+
+                if (A3D.Element("MaterialList", out Temp, typeof(object[])))
+                {
+                    Data.MaterialList = new MaterialList[((object[])Temp.Object).Length];
+                    MP MaterialList2 = new MP();
+                    for (n = 0; n < Data.MaterialList.Length; n++)
+                        if (Temp[n].GetType() == typeof(MP))
+                        {
+                            Data.MaterialList[n] = new MaterialList();
+                            MaterialList2 = (MP)Temp[n];
+                            Data.MaterialList[n].HashName = MaterialList2.ReadString("HashName");
+                            Data.MaterialList[n].Name = MaterialList2.ReadString("Name");
+                            ReadMP(ref Data.MaterialList[n].BlendColor, MaterialList2, "BlendColor");
+                            ReadMP(ref Data.MaterialList[n].GlowIntensity, MaterialList2, "GlowIntensity");
+                            ReadMP(ref Data.MaterialList[n].Incandescence, MaterialList2, "Incandescence");
+                        }
+                }
+
+                if (A3D.Element("MObjectHRC", out Temp, typeof(object[])))
+                {
+                    Data.MObjectHRC = new MObjectHRC[((object[])Temp.Object).Length];
+                    MP _Node4 = new MP();
+                    MP _Instance3 = new MP();
+                    MP MObjectHRC2 = new MP();
+                    for (i19 = 0; i19 < Data.MObjectHRC.Length; i19++)
+                    {
+                        if (Temp[i19].GetType() == typeof(MP))
+                        {
+                            Data.MObjectHRC[i19] = new MObjectHRC();
+                            MObjectHRC2 = (MP)Temp[i19];
+                            Data.MObjectHRC[i19].Name = MObjectHRC2.ReadString("Name");
+                            ReadMP(ref Data.MObjectHRC[i19].MT, MObjectHRC2);
+
+                            if (MObjectHRC2.Element("Instance", out MP Instance, typeof(object[])))
+                            {
+                                Data.MObjectHRC[i19].Instance = new Instance[((object[])Instance.Object).Length];
+                                for (i18 = 0; i18 < Data.MObjectHRC[i19].Instance.Length; i18++)
+                                {
+                                    if (Instance[i18].GetType() == typeof(MP))
+                                    {
+                                        Data.MObjectHRC[i19].Instance[i18] = new Instance();
+                                        _Instance3 = (MP)Instance[i18];
+                                        Data.MObjectHRC[i19].Instance[i18].Name = _Instance3.ReadString("Name");
+                                        Data.MObjectHRC[i19].Instance[i18].Shadow = _Instance3.ReadNInt32("Shadow");
+                                        Data.MObjectHRC[i19].Instance[i18].UIDName = _Instance3.ReadString("UIDName");
+                                        ReadMP(ref Data.MObjectHRC[i19].Instance[i18].MT, _Instance3);
+                                    }
+                                }
+                            }
+
+                            if (MObjectHRC2.Element("Node", out MP Node2, typeof(object[])))
+                            {
+                                Data.MObjectHRC[i19].Node = new Node[((object[])Node2.Object).Length];
+                                for (i18 = 0; i18 < Data.MObjectHRC[i19].Node.Length; i18++)
+                                {
+                                    if (Node2[i18].GetType() == typeof(MP))
+                                    {
+                                        Data.MObjectHRC[i19].Node[i18] = new Node();
+                                        _Node4 = (MP)Node2[i18];
+                                        Data.MObjectHRC[i19].Node[i18].Name = _Node4.ReadString("Name");
+                                        Data.MObjectHRC[i19].Node[i18].Parent = _Node4.ReadNInt32("Parent");
+                                        ReadMP(ref Data.MObjectHRC[i19].Node[i18].MT, _Node4);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (A3D.Element("MObjectHRCList", out Temp, typeof(object[])))
+                {
+                    Data.MObjectHRCList = new string[((object[])Temp.Object).Length];
+                    for (n = 0; n < Data.MObjectHRCList.Length; n++)
+                        if (Temp[n].GetType() == typeof(MP))
+                            Data.MObjectHRCList[n] = ((MP)Temp[n]).ReadString();
+                }
+
+                if (A3D.Element("Motion", out Temp, typeof(object[])))
+                {
+                    Data.Motion = new string[((object[])Temp.Object).Length];
+                    for (n = 0; n < Data.Motion.Length; n++)
+                        if (Temp[n].GetType() == typeof(MP))
+                            Data.Motion[n] = ((MP)Temp[n]).ReadString();
+                }
+
+                if (A3D.Element("Object", out Temp, typeof(object[])))
+                {
+                    Data.Object = new KKtLib.A3DA.Object[((object[])Temp.Object).Length];
+                    MP _TP2 = new MP();
+                    MP _TT2 = new MP();
+                    MP Object2 = new MP();
+                    for (i19 = 0; i19 < Data.Object.Length; i19++)
+                        if (Temp[i19].GetType() == typeof(MP))
+                        {
+                            Data.Object[i19] = new Object();
+                            Object2 = (MP)Temp[i19];
+                            Data.Object[i19].Morph = Object2.ReadString("Morph");
+                            Data.Object[i19].MorphOffset = Object2.ReadNInt32("MorphOffset");
+                            Data.Object[i19].Name = Object2.ReadString("Name");
+                            Data.Object[i19].ParentName = Object2.ReadString("ParentName");
+                            Data.Object[i19].UIDName = Object2.ReadString("UIDName");
+                            ReadMP(ref Data.Object[i19].MT, Object2);
+
+                            if (Object2.Element("TP", out MP TP, typeof(object[])))
+                            {
+                                Data.Object[i19].TP = new TexturePattern[((object[])TP.Object).Length];
+                                for (i18 = 0; i18 < Data.Object[i19].TP.Length; i18++)
+                                {
+                                    if (TP[i18].GetType() == typeof(MP))
+                                    {
+                                        Data.Object[i19].TP[i18] = new TexturePattern();
+                                        _TP2 = (MP)TP[i18];
+                                        Data.Object[i19].TP[i18].Name = _TP2.ReadString("Name");
+                                        Data.Object[i19].TP[i18].Pat = _TP2.ReadString("Pat");
+                                        Data.Object[i19].TP[i18].PatOffset = _TP2.ReadNInt32("PatOffset");
+                                    }
+                                }
+                            }
+
+                            if (Object2.Element("TT", out MP TT, typeof(object[])))
+                            {
+                                Data.Object[i19].TT = new TextureTransform[((object[])TT.Object).Length];
+                                for (i18 = 0; i18 < Data.Object[i19].TT.Length; i18++)
+                                {
+                                    if (TT[i18].GetType() == typeof(MP))
+                                    {
+                                        Data.Object[i19].TT[i18] = new TextureTransform();
+                                        _TT2 = (MP)TT[i18];
+                                        Data.Object[i19].TT[i18].Name = _TT2.ReadString("Name");
+                                        ReadMP(ref Data.Object[i19].TT[i18].C, _TT2, "C");
+                                        ReadMP(ref Data.Object[i19].TT[i18].O, _TT2, "O");
+                                        ReadMP(ref Data.Object[i19].TT[i18].R, _TT2, "R");
+                                        ReadMP(ref Data.Object[i19].TT[i18].RF, _TT2, "RF");
+                                        ReadMP(ref Data.Object[i19].TT[i18].Ro, _TT2, "Ro");
+                                        ReadMP(ref Data.Object[i19].TT[i18].TF, _TT2, "TF");
+                                    }
+                                }
+                            }
+                        }
+                }
+
+                if (A3D.Element("ObjectHRC", out Temp, typeof(object[])))
+                {
+                    Data.ObjectHRC = new ObjectHRC[((object[])Temp.Object).Length];
+                    MP _Node2 = new MP();
+                    MP _Instance = new MP();
+                    MP ObjectHRC2 = new MP();
+                    for (i19 = 0; i19 < Data.ObjectHRC.Length; i19++)
+                        if (Temp[i19].GetType() == typeof(MP))
+                        {
+                            Data.ObjectHRC[i19] = new ObjectHRC();
+                            ObjectHRC2 = (MP)Temp[i19];
+                            Data.ObjectHRC[i19].Name = ObjectHRC2.ReadString("Name");
+                            Data.ObjectHRC[i19].Shadow = ObjectHRC2.ReadNDouble("Shadow");
+                            Data.ObjectHRC[i19].UIDName = ObjectHRC2.ReadString("UIDName");
+                            if (ObjectHRC2.Element("Node", out MP Node, typeof(object[])))
+                            {
+                                Data.ObjectHRC[i19].Node = new Node[((object[])Node.Object).Length];
+                                for (i18 = 0; i18 < Data.ObjectHRC[i19].Node.Length; i18++)
+                                {
+                                    if (Node[i18].GetType() == typeof(MP))
+                                    {
+                                        Data.ObjectHRC[i19].Node[i18] = new Node();
+                                        _Node2 = (MP)Node[i18];
+                                        Data.ObjectHRC[i19].Node[i18].Name = _Node2.ReadString("Name");
+                                        Data.ObjectHRC[i19].Node[i18].Parent = _Node2.ReadInt32("Parent");
+                                        ReadMP(ref Data.ObjectHRC[i19].Node[i18].MT, _Node2);
+                                    }
+                                }
+                            }
+                        }
+                }
+
+                if (A3D.Element("ObjectHRCList", out Temp, typeof(object[])))
+                {
+                    Data.ObjectHRCList = new string[((object[])Temp.Object).Length];
+                    for (n = 0; n < Data.ObjectHRCList.Length; n++)
+                        if (Temp[n].GetType() == typeof(MP))
+                            Data.ObjectHRCList[n] = ((MP)Temp[n]).ReadString();
+                }
+
+                if (A3D.Element("ObjectList", out Temp, typeof(object[])))
+                {
+                    Data.ObjectList = new string[((object[])Temp.Object).Length];
+                    for (n = 0; n < Data.ObjectList.Length; n++)
+                        if (Temp[n].GetType() == typeof(MP))
+                            Data.ObjectList[n] = ((MP)Temp[n]).ReadString();
+                }
+
+                if (A3D.Element("PlayControl", out Temp))
+                {
+                    Data.PlayControl.Begin = Temp.ReadNDouble("Begin");
+                    Data.PlayControl.Div = Temp.ReadNDouble("Div");
+                    Data.PlayControl.FPS = Temp.ReadNDouble("FPS");
+                    Data.PlayControl.Offset = Temp.ReadNDouble("Offset");
+                    Data.PlayControl.Size = Temp.ReadNDouble("Size");
+                }
+
+                if (A3D.Element("Point", out Temp, typeof(object[])))
+                {
+                    Data.Point = new ModelTransform[((object[])Temp.Object).Length];
+                    for (n = 0; n < Data.Point.Length; n++)
+                        if (Temp[n].GetType() == typeof(MP))
+                            ReadMP(ref Data.Point[n], (MP)Temp[n]);
+                }
+
+                if (A3D.Element("PostProcess", out Temp))
+                {
+                    Data.PostProcess.Boolean = true;
+                    ReadMP(ref Data.PostProcess.Ambient, Temp, "Ambient");
+                    ReadMP(ref Data.PostProcess.Diffuse, Temp, "Diffuse");
+                    ReadMP(ref Data.PostProcess.LensFlare, Temp, "LensFlare");
+                    ReadMP(ref Data.PostProcess.LensGhost, Temp, "LensGhost");
+                    ReadMP(ref Data.PostProcess.LensShaft, Temp, "LensShaft");
+                    ReadMP(ref Data.PostProcess.Specular, Temp, "Specular");
+                }
+                Temp = null;
+            }
+            MsgPack = null;
+        }
+
+        private void ReadMP(ref ModelTransform MT, MP k, string name)
+        { if (k.Element(name, out MP Name))
+                ReadMP(ref MT, Name); }
+
+        private void ReadMP(ref ModelTransform MT, MP k)
+        {
+            if (k != null)
+            {
+                MT = new ModelTransform();
+                ReadMP(ref MT.Rot, k, "Rot");
+                ReadMP(ref MT.Scale, k, "Scale");
+                ReadMP(ref MT.Trans, k, "Trans");
+                ReadMP(ref MT.Visibility, k, "Visibility");
+            }
+        }
+
+        private void ReadMP(ref RGBAKey RGBA, MP k, string name)
+        { if (k.Element(name, out MP Name))
+                ReadMP(ref RGBA, Name); }
+
+        private void ReadMP(ref RGBAKey RGBA, MP k)
+        {
+            if (k != null)
+            {
+                RGBA = new RGBAKey
+                {
+                    Boolean = true
+                };
+                ReadMP(ref RGBA.R, k, "R");
+                ReadMP(ref RGBA.G, k, "G");
+                ReadMP(ref RGBA.B, k, "B");
+                ReadMP(ref RGBA.A, k, "A");
+            }
+        }
+
+        private void ReadMP(ref Vector3Key Key, MP k, string name)
+        { if (k.Element(name, out MP Name))
+                ReadMP(ref Key, Name); }
+
+        private void ReadMP(ref Vector3Key Key, MP k)
+        {
+            Key = new Vector3Key();
+            ReadMP(ref Key.X, k, "X");
+            ReadMP(ref Key.Y, k, "Y");
+            ReadMP(ref Key.Z, k, "Z");
+        }
+
+        private void ReadMP(ref KeyUV UV, MP k, string name)
+        { if (k.Element(name, out MP Name))
+                ReadMP(ref UV, Name); }
+
+        private void ReadMP(ref KeyUV UV, MP k)
+        {
+            UV = new KeyUV();
+            ReadMP(ref UV.U, k, "U");
+            ReadMP(ref UV.V, k, "V");
+        }
+
+        private void ReadMP(ref Key Key, MP k, string name)
+        { if (k.Element(name, out MP Name))
+                ReadMP(ref Key, Name); }
+
+        private void ReadMP(ref Key Key, MP k)
+        {
+            if (k != null)
+            {
+                Key = new Key
+                {
+                    Boolean = true,
+                    EPTypePost = k.ReadNDouble("Post"),
+                    EPTypePre = k.ReadNDouble("Pre"),
+                    Max = k.ReadNDouble("M"),
+                    Type = k.ReadNInt32("T"),
+                    Value = k.ReadNDouble("V")
+                };
+                int? type = Key.Type;
+                int num = 0;
+                int num2;
+                if (!(type.GetValueOrDefault() == num & type.HasValue))
+                {
+                    type = Key.Type;
+                    num = 1;
+                    num2 = ((!(type.GetValueOrDefault() == num & type.HasValue)) ? 1 : 0);
+                }
+                else
+                    num2 = 0;
+                if (num2 != 0)
+                {
+                    if (k.Element("Trans", out MP Trans, typeof(object[])))
+                    {
+                        Key.Length = ((object[])Trans.Object).Length;
+                        Key.Trans = new Key.Transform[Key.Length.Value];
+                        MP _Trans2 = new MP();
+                        int i = 0;
+                        while (true)
+                        {
+                            int num3 = i;
+                            type = Key.Length;
+                            if (num3 < type.GetValueOrDefault() & type.HasValue)
+                            {
+                                Key.Trans[i] = default(Key.Transform);
+                                if (Trans[i].GetType() == typeof(MP))
+                                {
+                                    _Trans2 = (MP)Trans[i];
+                                    if (!(_Trans2.Object.GetType() != typeof(object[])))
+                                    {
+                                        Key.Trans[i].Type = ((object[])_Trans2.Object).Length - 1;
+                                        if (!(_Trans2[0].GetType() != typeof(MP)))
+                                        {
+                                            Key.Trans[i].Frame = ((MP)_Trans2[0]).ReadDouble();
+                                            if (Key.Trans[i].Type >= 1 && !(_Trans2[1].GetType() != typeof(MP)))
+                                            { Key.Trans[i].Value1 = ((MP)_Trans2[1]).ReadDouble();
+                                                if (Key.Trans[i].Type >= 2 && !(_Trans2[2].GetType() != typeof(MP)))
+                                                { Key.Trans[i].Value2 = ((MP)_Trans2[2]).ReadDouble();
+                                                    if (Key.Trans[i].Type >= 3 && !(_Trans2[3].GetType() != typeof(MP)))
+                                                        Key.Trans[i].Value3 = ((MP)_Trans2[3]).ReadDouble();
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                i++;
+                                continue;
+                            }
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    type = Key.Type;
+                    num = 0;
+                    if (type.GetValueOrDefault() == num & type.HasValue)
+                    {
+                        Key.Value = 0.0;
+                    }
+                }
+            }
+        }
+
+        public void MsgPackWriter(string file)
+        {
+            int l = 0;
+            int i18 = 0;
+            int i17 = 0;
+
+            MsgPack = new MP(MPTypes.FixMap);
+            MP A3D = new MP("A3D");
+            A3D.Add("Format", Data.Header.Format.ToString());
+
+            MP _ = new MP("_");
+            _.Add("CompressF16", Data._.CompressF16);
+            _.Add("ConverterVersion", Data._.ConverterVersion);
+            _.Add("FileName", Data._.FileName);
+            _.Add("PropertyVersion", Data._.PropertyVersion);
+            A3D.Add(_);
+
+            if (Data.Ambient.Length != 0)
+            {
+                MP Ambient = new MP("Ambient", Data.Ambient.Length);
+                for (l = 0; l < Data.Ambient.Length; l++)
+                {
+                    MP _Ambient = new MP();
+                    _Ambient.Add(WriteMP(ref Data.Ambient[l].LightDiffuse, "LightDiffuse"));
+                    _Ambient.Add("Name", Data.Ambient[l].Name);
+                    _Ambient.Add(WriteMP(ref Data.Ambient[l].RimLightDiffuse, "RimLightDiffuse"));
+                    Ambient[l] = _Ambient;
+                }
+                A3D.Add(Ambient);
+            }
+
+            if (Data.Camera.Auxiliary.Boolean || Data.Camera.Root.Length != 0)
+            {
+                MP Camera = new MP("Camera");
+                if (Data.Camera.Auxiliary.Boolean)
+                {
+                    MP Auxiliary = new MP("Auxiliary");
+                    Auxiliary.Add(WriteMP(ref Data.Camera.Auxiliary.AutoExposure, "AutoExposure"));
+                    Auxiliary.Add(WriteMP(ref Data.Camera.Auxiliary.Exposure, "Exposure"));
+                    Auxiliary.Add(WriteMP(ref Data.Camera.Auxiliary.Gamma, "Gamma"));
+                    Auxiliary.Add(WriteMP(ref Data.Camera.Auxiliary.GammaRate, "GammaRate"));
+                    Auxiliary.Add(WriteMP(ref Data.Camera.Auxiliary.Saturate, "Saturate"));
+                    Camera.Add(Auxiliary);
+                }
+
+                if (Data.Camera.Root.Length != 0)
+                {
+                    MP Root = new MP("Root", Data.Camera.Root.Length);
+                    for (l = 0; l < Data.Camera.Root.Length; l++)
+                    {
+                        MP _Root = new MP();
+                        WriteMP(ref Data.Camera.Root[l].MT, ref _Root);
+                        _Root.Add(WriteMP(ref Data.Camera.Root[l].Interest, "Interest"));
+                        MP VP = new MP("ViewPoint");
+                        if (Data.Camera.Root[l].ViewPoint.Aspect.HasValue)
+                            VP.Add("Aspect", Data.Camera.Root[l].ViewPoint.Aspect);
+                        if (Data.Camera.Root[l].ViewPoint.CameraApertureH.HasValue)
+                            VP.Add("CameraApertureH", Data.Camera.Root[l].ViewPoint.CameraApertureH);
+                        if (Data.Camera.Root[l].ViewPoint.CameraApertureW.HasValue)
+                            VP.Add("CameraApertureW", Data.Camera.Root[l].ViewPoint.CameraApertureW);
+                        VP.Add(WriteMP(ref Data.Camera.Root[l].ViewPoint.FocalLength, "FocalLength"));
+                        VP.Add(WriteMP(ref Data.Camera.Root[l].ViewPoint.FOV, "FOV"));
+                            VP.Add("FOVHorizontal", Data.Camera.Root[l].ViewPoint.FOVHorizontal);
+                        VP.Add(WriteMP(ref Data.Camera.Root[l].ViewPoint.Roll, "Roll"));
+                        WriteMP(ref Data.Camera.Root[l].ViewPoint.MT, ref VP);
+                        _Root.Add(VP);
+                        Root[l] = _Root;
+                    }
+                    Camera.Add(Root);
+                }
+                A3D.Add(Camera);
+            }
+
+            if (Data.Chara.Length != 0)
+            {
+                MP Chara = new MP("Chara", Data.Chara.Length);
+                for (l = 0; l < Data.Curve.Length; l++)
+                {
+                    MP _Chara = new MP();
+                    WriteMP(ref Data.Chara[l], ref _Chara);
+                    Chara[l] = _Chara;
+                }
+                A3D.Add(Chara);
+            }
+
+            if (Data.Curve.Length != 0)
+            {
+                MP Curve = new MP("Curve", Data.Curve.Length);
+                for (l = 0; l < Data.Curve.Length; l++)
+                {
+                    MP _Curve = new MP();
+                    _Curve.Add("Name", Data.Curve[l].Name);
+                    _Curve.Add(WriteMP(ref Data.Curve[l].CV, "CV"));
+                    Curve[l] = _Curve;
+                }
+                A3D.Add(Curve);
+            }
+
+            if (Data.DOF.Name != null)
+            {
+                MP DOF = new MP("DOF");
+                DOF.Add("Name", Data.DOF.Name);
+                DOF.Add(WriteMP(ref Data.DOF.MT, "MT"));
+                A3D.Add(DOF);
+            }
+
+            if (Data.Event.Length != 0)
+            {
+                MP Event = new MP("Events", Data.Event.Length);
+                for (l = 0; l < Data.Event.Length; l++)
+                {
+                    MP _Event = new MP();
+                    _Event.Add("Begin", Data.Event[l].Begin);
+                    _Event.Add("ClipBegin", Data.Event[l].ClipBegin);
+                    _Event.Add("ClipEnd", Data.Event[l].ClipEnd);
+                    _Event.Add("End", Data.Event[l].End);
+                    _Event.Add("Name", Data.Event[l].Name);
+                    _Event.Add("Param1", Data.Event[l].Param1);
+                    _Event.Add("Ref", Data.Event[l].Ref);
+                    _Event.Add("TimeRefScale", Data.Event[l].TimeRefScale);
+                    _Event.Add("Type", Data.Event[l].Type);
+                    Event[l] = _Event;
+                }
+                A3D.Add(Event);
+            }
+
+            if (Data.Fog.Length != 0)
+            {
+                MP Fog = new MP("Fog", Data.Fog.Length);
+                for (l = 0; l < Data.Fog.Length; l++)
+                {
+                    MP _Fog = new MP();
+                    _Fog.Add(WriteMP(ref Data.Fog[l].Density, "Density"));
+                    _Fog.Add(WriteMP(ref Data.Fog[l].Diffuse, "Diffuse"));
+                    _Fog.Add(WriteMP(ref Data.Fog[l].End, "End"));
+                    _Fog.Add("Id", Data.Fog[l].Id);
+                    _Fog.Add(WriteMP(ref Data.Fog[l].Start, "Start"));
+                    Fog[l] = _Fog;
+                }
+                A3D.Add(Fog);
+            }
+
+            if (Data.Light.Length != 0)
+            {
+                MP Light = new MP("Light", Data.Light.Length);
+                for (l = 0; l < Data.Light.Length; l++)
+                {
+                    MP _Light = new MP();
+                    _Light.Add(WriteMP(ref Data.Light[l].Ambient, "Ambient"));
+                    _Light.Add(WriteMP(ref Data.Light[l].Diffuse, "Diffuse"));
+                    _Light.Add("Id", Data.Light[l].Id);
+                    _Light.Add(WriteMP(ref Data.Light[l].Incandescence, "Incandescence"));
+                    _Light.Add("Name", Data.Light[l].Name);
+                    _Light.Add(WriteMP(ref Data.Light[l].Position, "Position"));
+                    _Light.Add(WriteMP(ref Data.Light[l].Specular, "Specular"));
+                    _Light.Add(WriteMP(ref Data.Light[l].SpotDirection, "SpotDirection"));
+                    _Light.Add("Type", Data.Light[l].Type);
+                    Light[l] = _Light;
+                }
+                A3D.Add(Light);
+            }
+
+            if (Data.MObjectHRC.Length != 0)
+            {
+                MP MObjectHRC = new MP("MObjectHRC", Data.MObjectHRC.Length);
+                for (i18 = 0; i18 < Data.MObjectHRC.Length; i18++)
+                {
+                    MP _MObjectHRC = new MP();
+                    _MObjectHRC.Add("Name", Data.MObjectHRC[i18].Name);
+
+                    if (Data.MObjectHRC[i18].Instance != null)
+                    {
+                        MP Instance = new MP("Instance", Data.MObjectHRC[i18].Instance.Length);
+                        for (i17 = 0; i17 < Data.MObjectHRC[i18].Instance.Length; i17++)
+                        {
+                            MP _Instance = new MP();
+                            _Instance.Add("Name", Data.MObjectHRC[i18].Instance[i17].Name);
+                            _Instance.Add("Shadow", Data.MObjectHRC[i18].Instance[i17].Shadow);
+                            _Instance.Add("UIDName", Data.MObjectHRC[i18].Instance[i17].UIDName);
+                            WriteMP(ref Data.MObjectHRC[i18].Instance[i17].MT, ref _Instance);
+                            Instance[i17] = _Instance;
+                        }
+                        _MObjectHRC.Add(Instance);
+                    }
+
+                    if (Data.MObjectHRC[i18].Node != null)
+                    {
+                        MP Node2 = new MP("Node", Data.MObjectHRC[i18].Node.Length);
+                        for (i17 = 0; i17 < Data.MObjectHRC[i18].Node.Length; i17++)
+                        {
+                            MP _Node2 = new MP();
+                            _Node2.Add("Name", Data.MObjectHRC[i18].Node[i17].Name);
+                            _Node2.Add("Parent", Data.MObjectHRC[i18].Node[i17].Parent);
+                            WriteMP(ref Data.MObjectHRC[i18].Node[i17].MT, ref _Node2);
+                            Node2[i17] = _Node2;
+                        }
+                        _MObjectHRC.Add(Node2);
+                    }
+
+                    WriteMP(ref Data.MObjectHRC[i18].MT, ref _MObjectHRC);
+                    MObjectHRC[i18] = _MObjectHRC;
+                }
+                A3D.Add(MObjectHRC);
+            }
+
+            if (Data.MObjectHRCList.Length != 0)
+            {
+                MP MObjectHRCList = new MP("MObjectHRCList", Data.MObjectHRCList.Length);
+                for (l = 0; l < Data.MObjectHRCList.Length; l++)
+                    MObjectHRCList[l] = Data.MObjectHRCList[l];
+                A3D.Add(MObjectHRCList);
+            }
+
+            if (Data.MaterialList.Length != 0)
+            {
+                MP MaterialList = new MP("MaterialList");
+                l = 0;
+                while (l < Data.MaterialList.Length)
+                {
+                    MP _Material = new MP("Material");
+                    _Material.Add("HashName", Data.MaterialList[l].HashName);
+                    _Material.Add("Name", Data.MaterialList[l].Name);
+                    _Material.Add(WriteMP(ref Data.MaterialList[l].BlendColor, "BlendColor"));
+                    _Material.Add(WriteMP(ref Data.MaterialList[l].GlowIntensity, "GlowIntensity"));
+                    _Material.Add(WriteMP(ref Data.MaterialList[l].Incandescence, "Incandescence"));
+                    MaterialList[l] = _Material;
+                    i18++;
+                }
+                A3D.Add(MaterialList);
+            }
+
+            if (Data.Motion.Length != 0)
+            {
+                MP Motion = new MP("Motion", Data.Motion.Length);
+                for (l = 0; l < Data.Motion.Length; l++)
+                    Motion[l] = Data.Motion[l];
+                A3D.Add(Motion);
+            }
+
+            if (Data.Object.Length != 0)
+            {
+                MP Object = new MP("Object", Data.Object.Length);
+                for (i18 = 0; i18 < Data.Object.Length; i18++)
+                {
+                    MP _Object = new MP();
+                    _Object.Add("Morph", Data.Object[i18].Morph);
+                    _Object.Add("MorphOffset", Data.Object[i18].MorphOffset);
+                    _Object.Add("Name", Data.Object[i18].Name);
+                    _Object.Add("ParentName", Data.Object[i18].ParentName);
+                    _Object.Add("UIDName", Data.Object[i18].UIDName);
+                    WriteMP(ref Data.Object[i18].MT, ref _Object);
+                    if (Data.Object[i18].TP != null)
+                    {
+                        MP TP = new MP("TP", Data.Object[i18].TP.Length);
+                        for (i17 = 0; i17 < Data.Object[i18].TP.Length; i17++)
+                        {
+                            MP _TP = new MP();
+                            _TP.Add("Name", Data.Object[i18].TP[i17].Name);
+                            _TP.Add("Pat", Data.Object[i18].TP[i17].Pat);
+                            _TP.Add("PatOffset", Data.Object[i18].TP[i17].PatOffset);
+                            TP[i17] = _TP;
+                        }
+                        _Object.Add(TP);
+                    }
+                    if (Data.Object[i18].TT != null)
+                    {
+                        MP TT = new MP("TT", Data.Object[i18].TT.Length);
+                        for (i17 = 0; i17 < Data.Object[i18].TT.Length; i17++)
+                        {
+                            MP _TT = new MP();
+                            _TT.Add("Name", Data.Object[i18].TT[i17].Name);
+                            _TT.Add(WriteMP(ref Data.Object[i18].TT[i17].C, "C"));
+                            _TT.Add(WriteMP(ref Data.Object[i18].TT[i17].O, "O"));
+                            _TT.Add(WriteMP(ref Data.Object[i18].TT[i17].R, "R"));
+                            _TT.Add(WriteMP(ref Data.Object[i18].TT[i17].Ro, "Ro"));
+                            _TT.Add(WriteMP(ref Data.Object[i18].TT[i17].RF, "RF"));
+                            _TT.Add(WriteMP(ref Data.Object[i18].TT[i17].TF, "TF"));
+                            TT[i17] = _TT;
+                        }
+                        _Object.Add(TT);
+                    }
+                    Object[i18] = _Object;
+                }
+                A3D.Add(Object);
+            }
+
+            if (Data.ObjectHRC.Length != 0)
+            {
+                MP ObjectHRC = new MP("ObjectHRC", Data.ObjectHRC.Length);
+                for (i18 = 0; i18 < Data.ObjectHRC.Length; i18++)
+                {
+                    MP _ObjectHRC = new MP();
+                    _ObjectHRC.Add("Name", Data.ObjectHRC[i18].Name);
+                    _ObjectHRC.Add("Shadow", Data.ObjectHRC[i18].Shadow);
+                    _ObjectHRC.Add("UIDName", Data.ObjectHRC[i18].UIDName);
+                    if (Data.ObjectHRC[i18].Node != null)
+                    {
+                        MP Node = new MP("Node", Data.ObjectHRC[i18].Node.Length);
+                        for (i17 = 0; i17 < Data.ObjectHRC[i18].Node.Length; i17++)
+                        {
+                            MP _Node = new MP();
+                            _Node.Add("Name", Data.ObjectHRC[i18].Node[i17].Name);
+                            _Node.Add("Parent", Data.ObjectHRC[i18].Node[i17].Parent);
+                            WriteMP(ref Data.ObjectHRC[i18].Node[i17].MT, ref _Node);
+                            Node[i17] = _Node;
+                        }
+                        _ObjectHRC.Add(Node);
+                    }
+                    ObjectHRC[i18] = _ObjectHRC;
+                }
+                A3D.Add(ObjectHRC);
+            }
+
+            if (Data.ObjectHRCList.Length != 0)
+            {
+                MP ObjectHRCList = new MP("ObjectHRCList", Data.ObjectHRCList.Length);
+                for (l = 0; l < Data.ObjectHRCList.Length; l++)
+                    ObjectHRCList[l] = Data.ObjectHRCList[l];
+                A3D.Add(ObjectHRCList);
+            }
+
+            if (Data.ObjectList.Length != 0)
+            {
+                MP ObjectList = new MP("ObjectList", Data.ObjectList.Length);
+                for (l = 0; l < Data.ObjectList.Length; l++)
+                    ObjectList[l] = Data.ObjectList[l];
+                A3D.Add(ObjectList);
+            }
+
+            MP PlayControl = new MP("PlayControl");
+            if (Data.PlayControl.Begin.HasValue)
+                PlayControl.Add("Begin", Data.PlayControl.Begin);
+            if (Data.PlayControl.Div.HasValue)
+                PlayControl.Add("Div", Data.PlayControl.Div);
+            if (Data.PlayControl.FPS.HasValue)
+                PlayControl.Add("FPS", Data.PlayControl.FPS);
+            if (Data.PlayControl.Offset.HasValue)
+                PlayControl.Add("Offset", Data.PlayControl.Offset);
+            if (Data.PlayControl.Size.HasValue)
+                PlayControl.Add("Size", Data.PlayControl.Size);
+            A3D.Add(PlayControl);
+
+            if (Data.Point.Length != 0)
+            {
+                MP Point = new MP("Point", Data.Point.Length);
+                for (l = 0; l < Data.Point.Length; l++)
+                {
+                    MP _Point = new MP();
+                    WriteMP(ref Data.Point[l], ref _Point);
+                    Point[l] = _Point;
+                }
+                A3D.Add(Point);
+            }
+
+            if (Data.PostProcess.Boolean)
+            {
+                MP PostProcess = new MP("PostProcess");
+                PostProcess.Add(WriteMP(ref Data.PostProcess.Ambient, "Ambient"));
+                PostProcess.Add(WriteMP(ref Data.PostProcess.Diffuse, "Diffuse"));
+                PostProcess.Add(WriteMP(ref Data.PostProcess.LensFlare, "LensFlare"));
+                PostProcess.Add(WriteMP(ref Data.PostProcess.LensGhost, "LensGhost"));
+                PostProcess.Add(WriteMP(ref Data.PostProcess.LensShaft, "LensShaft"));
+                PostProcess.Add(WriteMP(ref Data.PostProcess.Specular, "Specular"));
+                A3D.Add(PostProcess);
+            }
+
+            MsgPack.Add(A3D);
+
+            MPIO IO = new MPIO(KKtIO.OpenWriter(file + ".mp", true));
+            IO.Write(MsgPack, true);
+            MsgPack = null;
+        }
+
+        private MP WriteMP(ref ModelTransform MT, string name)
+        {
+            MP MTs = new MP(name);
+            WriteMP(ref MT, ref MTs);
+            return MTs;
+        }
+
+        private void WriteMP(ref ModelTransform MT, ref MP MTs)
+        {
+            MTs.Add(WriteMP(ref MT.Rot, "Rot"));
+            MTs.Add(WriteMP(ref MT.Scale, "Scale"));
+            MTs.Add(WriteMP(ref MT.Trans, "Trans"));
+            MTs.Add(WriteMP(ref MT.Visibility, "Visibility"));
+        }
+
+        private MP WriteMP(ref RGBAKey RGBA, string name)
+        {
+            if (!RGBA.Boolean)
+                return null;
+            MP RGBAs = new MP(name);
+            RGBAs.Add(WriteMP(ref RGBA.R, "R"));
+            RGBAs.Add(WriteMP(ref RGBA.G, "G"));
+            RGBAs.Add(WriteMP(ref RGBA.B, "B"));
+            RGBAs.Add(WriteMP(ref RGBA.A, "A"));
+            return RGBAs;
+        }
+
+        private MP WriteMP(ref Vector3Key Key, string name)
+        {
+            MP Keys = new MP(name);
+            Keys.Add(WriteMP(ref Key.X, "X"));
+            Keys.Add(WriteMP(ref Key.Y, "Y"));
+            Keys.Add(WriteMP(ref Key.Z, "Z"));
+            return Keys;
+        }
+
+        private MP WriteMP(ref KeyUV UV, string name)
+        {
+            if (!UV.U.Boolean && !UV.V.Boolean)
+                return null;
+            MP UVs = new MP(name);
+            UVs.Add(WriteMP(ref UV.U, "U"));
+            UVs.Add(WriteMP(ref UV.V, "V"));
+            return UVs;
+        }
+
+        private MP WriteMP(ref Key Key, string name)
+        {
+            int num2;
+            if (Key.Boolean)
+            {
+                int? type = Key.Type;
+                int num = 0;
+                num2 = ((type.GetValueOrDefault() < num & type.HasValue) ? 1 : 0);
+            }
+            else
+                num2 = 1;
+            if (num2 != 0)
+                return null;
+            MP Keys = new MP(name);
+            Keys.Add("T", Key.Type);
+            if (Key.Trans != null)
+            {
+                if (Key.EPTypePost.HasValue)
+                    Keys.Add("Post", Key.EPTypePost);
+                if (Key.EPTypePre.HasValue)
+                    Keys.Add("Pre", Key.EPTypePre);
+                if (Key.Max.HasValue)
+                    Keys.Add("M", Key.Max);
+                if (Key.Length.HasValue)
+                {
+                    MP Trans = new MP("Trans", Key.Trans.Length);
+                    for (int i = 0; i < Key.Trans.Length; i++)
+                    {
+                        if (Key.Trans[i].Value3 == 0.0)
+                        {
+                            Key.Trans[i].Type = 2;
+                            if (Key.Trans[i].Value2 == 0.0)
+                            {
+                                Key.Trans[i].Type = 1;
+                                if (Key.Trans[i].Value1 == 0.0)
+                                    Key.Trans[i].Type = 0;
+                            }
+                        }
+                        MP K = new MP(Key.Trans[i].Type + 1);
+                        K[0] = Key.Trans[i].Frame;
+                        if (Key.Trans[i].Type > 0)
+                        {
+                            K[1] = Key.Trans[i].Value1;
+                            if (Key.Trans[i].Type > 1)
+                            {
+                                K[2] = Key.Trans[i].Value2;
+                                if (Key.Trans[i].Type > 2)
+                                    K[3] = Key.Trans[i].Value3;
+                            }
+                        }
+                        Trans[i] = K;
+                    }
+                    Keys.Add(Trans);
+                }
+            }
+            else
+            {
+                double? nullable = Key.Value;
+                double num3 = 0.0;
+                int num4;
+                if (!(nullable.GetValueOrDefault() == num3 & nullable.HasValue))
+                {
+                    int? type = Key.Type;
+                    int num = 0;
+                    num4 = ((type.GetValueOrDefault() > num & type.HasValue) ? 1 : 0);
+                }
+                else
+                    num4 = 0;
+                if (num4 != 0)
+                    Keys.Add("V", Key.Value);
+            }
+            return Keys;
+        }
+
+
         private int[] SortWriter(int Length)
         {
             int i = 0;

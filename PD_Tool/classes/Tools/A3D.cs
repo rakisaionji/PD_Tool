@@ -11,6 +11,14 @@ namespace PD_Tool.Tools
         {
             Console.Title = "PD_Tool: Converter Tools: A3DA Converter";
             KKtMain.Choose(1, "a3da", out string[] FileNames);
+            
+            bool MP = true;
+            foreach (string file in FileNames)
+                if (file.EndsWith(".mp"))
+                {
+                    MP = false;
+                    break;
+                }
 
             KKtMain.Format Format = KKtMain.Format.NULL;
             Console.Clear();
@@ -23,6 +31,8 @@ namespace PD_Tool.Tools
             KKtMain.ConsoleDesign("4. F2nd PS3/PSV");
             KKtMain.ConsoleDesign("5. X    PS4/PSV");
             KKtMain.ConsoleDesign("6. MGF      PSV");
+            if (MP)
+                KKtMain.ConsoleDesign("9. MessagePack");
             KKtMain.ConsoleDesign(false);
             KKtMain.ConsoleDesign(true);
             Console.WriteLine();
@@ -42,25 +52,29 @@ namespace PD_Tool.Tools
                     string filepath = file.Replace(ext, "");
                     Console.Title = "PD_Tool: Converter Tools: A3DA Tools: " +
                         Path.GetFileNameWithoutExtension(file);
+                    KKtA3DA A = new KKtA3DA();
                     if (ext.ToLower() == ".a3da")
-                    {
-                        KKtA3DA A = new KKtA3DA();
                         A.A3DAReader(filepath);
+                    if (ext.ToLower() == ".mp")
+                        A.MsgPackReader(filepath);
+
+                    if (!MP || Format > KKtMain.Format.NULL)
                         A.IO = KKtLib.IO.OpenWriter(filepath + ".a3da", true);
-                        if (Format > KKtMain.Format.NULL)
-                        {
-                            if (A.Data.Header.Format < KKtMain.Format.F2LE)
-                                A.Data._.CompressF16 = Format == KKtMain.Format.MGF ? 2 : 1;
-                            A.Data.Header.Format = Format;
-                        }
-                        if (A.Data.Header.Format > KKtMain.Format.DT && A.Data.Header.Format != KKtMain.Format.FT)
-                            A.A3DCWriter(filepath);
-                        else
-                        {
-                            A.A3DC = false;
-                            A.A3DAWriter(filepath);
-                        }
+                    if (Format > KKtMain.Format.NULL)
+                    {
+                        if (A.Data.Header.Format < KKtMain.Format.F2LE)
+                            A.Data._.CompressF16 = Format == KKtMain.Format.MGF ? 2 : 1;
+                        A.Data.Header.Format = Format;
                     }
+                    if (!MP && A.Data.Header.Format > KKtMain.Format.DT && A.Data.Header.Format != KKtMain.Format.FT)
+                        A.A3DCWriter(filepath);
+                    else if (!MP || Format > KKtMain.Format.NULL)
+                    {
+                        A.A3DC = false;
+                        A.A3DAWriter(filepath);
+                    }
+                    else
+                        A.MsgPackWriter(filepath);
                 }
                 catch (Exception e)
                 { Console.WriteLine(e); }
