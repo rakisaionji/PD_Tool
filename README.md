@@ -9,7 +9,9 @@ A simple tool for working with Project Diva DT/FT/F/F2/X files
 - `DIVAFILE EncDec`
 - `DB_Tools`
   - `Auth DB Converter`
-  - `Bone DB Converter`
 - `Converting Tools`
   - `A3DA Converter`
+  - `DEX Converter`
+  - `DSC Converter`
   - `STR Converter`
+  
