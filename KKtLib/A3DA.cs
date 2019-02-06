@@ -513,6 +513,7 @@ namespace KKtLib.A3DA
             }
             else if (Key.RawData.KeyType != null)
             {
+                Key.RawData.Boolean = true;
                 Main.FindValue(Dict, Temp + "raw_data.value_type",
                     ref Key.RawData.ValueType);
                 if (Main.FindValue(Dict, Temp + "raw_data.value_list",
@@ -993,17 +994,17 @@ namespace KKtLib.A3DA
                 IO.Write(Temp + "ep_type_post=", Key.EPTypePost);
             if (Key.EPTypePre != null)
                 IO.Write(Temp + "ep_type_pre=", Key.EPTypePre);
-            if (Key.Length < 100)
+            if (!Key.RawData.Boolean)
             {
                 for (i = 0; i < Key.Trans.Length; i++)
                 {
                     SOi = SO[i];
                     IO.Write(Temp + "key." + SOi + ".data=");
                     if (Key.Trans[SOi].Type > 0) IO.Write("(");
-                    IO.Write(Main.ToString((float)Key.Trans[SOi].Frame));
-                    if (Key.Trans[SOi].Type > 0) { IO.Write("," + Main.ToString((float)Key.Trans[SOi].Value1));
-                        if (Key.Trans[SOi].Type > 1) { IO.Write("," + Main.ToString((float)Key.Trans[SOi].Value2));
-                            if (Key.Trans[SOi].Type > 2) IO.Write("," + Main.ToString((float)Key.Trans[SOi].Value3)); }
+                    IO.Write(Main.ToString(Key.Trans[SOi].Frame, 8));
+                    if (Key.Trans[SOi].Type > 0) { IO.Write("," + Main.ToString(Key.Trans[SOi].Value1));
+                        if (Key.Trans[SOi].Type > 1) { IO.Write("," + Main.ToString(Key.Trans[SOi].Value2));
+                            if (Key.Trans[SOi].Type > 2) IO.Write("," + Main.ToString(Key.Trans[SOi].Value3)); }
                         IO.Write(")"); }
                     IO.Write("\n");
                     IO.Write(Temp + "key." + SOi + ".type=", Key.Trans[SOi].Type);
@@ -1012,9 +1013,8 @@ namespace KKtLib.A3DA
             }
             if (Key.Max != null)
                 IO.Write(Temp + "max=", Key.Max);
-            if (Key.Length >= 100)
+            if (Key.RawData.Boolean)
             {
-                Key.RawData = new Key.RawD();
                 for (i = 0; i < Key.Trans.Length; i++)
                     if (Key.RawData.KeyType < Key.Trans[i].Type || Key.RawData.KeyType == null)
                         Key.RawData.KeyType = Key.Trans[i].Type;
@@ -1023,7 +1023,7 @@ namespace KKtLib.A3DA
                 IO.Write(Temp + "raw_data.value_list=");
                 for (i = 0; i < Key.Trans.Length; i++)
                 {
-                    IO.Write(Main.ToString(Key.Trans[i].Frame));
+                    IO.Write(Main.ToString(Key.Trans[i].Frame, 8));
                     if (Key.RawData.KeyType > 0) { IO.Write("," + Main.ToString(Key.Trans[i].Value1));
                         if (Key.RawData.KeyType > 1) { IO.Write("," + Main.ToString(Key.Trans[i].Value2));
                             if (Key.RawData.KeyType > 2) IO.Write("," + Main.ToString(Key.Trans[i].Value3)); } }
@@ -1033,7 +1033,6 @@ namespace KKtLib.A3DA
                 IO.Write(Temp + "raw_data.value_list_size=", Key.RawData.ValueListSize);
                 IO.Write(Temp + "raw_data.value_type=", Key.RawData.ValueType);
                 IO.Write(Temp + "raw_data_key_type=", Key.RawData.KeyType);
-                Key.RawData = new Key.RawD();
             }
             IO.Write(Temp + "type=", Key.Type & 0xFF);
         }        
@@ -1225,10 +1224,6 @@ namespace KKtLib.A3DA
                 { Key.Trans[i].Value2 = (double)IO.ReadHalf(); Key.Trans[i].Value3 = (double)IO.ReadHalf(); }
                 else
                 { Key.Trans[i].Value2 = IO.ReadSingle(); Key.Trans[i].Value3 = IO.ReadSingle(); }
-
-                if (Key.Trans[i].Value3 == 0) { Key.Trans[i].Type--;
-                    if (Key.Trans[i].Value2 == 0) { Key.Trans[i].Type--;
-                        if (Key.Trans[i].Value1 == 0) Key.Trans[i].Type--; } }
             }
         }
 
@@ -1243,10 +1238,8 @@ namespace KKtLib.A3DA
 
             if (Data.Header.Format > Main.Format.FT)
             {
-                int a = int.Parse(Data._.ConverterVersion);
-                int b = BitConverter.ToInt32(Text.ToUTF8(Data._.FileName), 0);
-                int c = int.Parse(Data._.PropertyVersion);
-                int d = (int)((long)a * b * c);
+                int a = (int)((long)int.Parse(Data._.ConverterVersion) * BitConverter.
+                    ToInt32(Text.ToUTF8(Data._.FileName), 0) * int.Parse(Data._.PropertyVersion));
 
                 IO.Write(Text.ToASCII("A3DA"));
                 IO.Write(0x00);
@@ -1254,7 +1247,7 @@ namespace KKtLib.A3DA
                 IO.Write(0x10000000);
                 IO.Write((long)0x00);
                 IO.Write((long)0x00);
-                IO.Write(d);
+                IO.Write(a);
                 IO.Write(0x00);
                 IO.Write((long)0x00);
                 IO.Write(0x01131010);
@@ -2033,6 +2026,7 @@ namespace KKtLib.A3DA
                     Type = k.ReadNInt32("T"),
                     Value = k.ReadNDouble("V")
                 };
+                Key.RawData.Boolean = k.ReadBoolean("RD");
                 int? type = Key.Type;
                 int num = 0;
                 int num2;
@@ -2062,17 +2056,17 @@ namespace KKtLib.A3DA
                                 if (Trans[i].GetType() == typeof(MP))
                                 {
                                     _Trans2 = (MP)Trans[i];
-                                    if (!(_Trans2.Object.GetType() != typeof(object[])))
+                                    if (_Trans2.Object.GetType() == typeof(object[]))
                                     {
                                         Key.Trans[i].Type = ((object[])_Trans2.Object).Length - 1;
-                                        if (!(_Trans2[0].GetType() != typeof(MP)))
+                                        if (_Trans2[0].GetType() == typeof(MP))
                                         {
                                             Key.Trans[i].Frame = ((MP)_Trans2[0]).ReadDouble();
-                                            if (Key.Trans[i].Type >= 1 && !(_Trans2[1].GetType() != typeof(MP)))
+                                            if (Key.Trans[i].Type >= 1 && _Trans2[1].GetType() == typeof(MP))
                                             { Key.Trans[i].Value1 = ((MP)_Trans2[1]).ReadDouble();
-                                                if (Key.Trans[i].Type >= 2 && !(_Trans2[2].GetType() != typeof(MP)))
+                                                if (Key.Trans[i].Type >= 2 && _Trans2[2].GetType() == typeof(MP))
                                                 { Key.Trans[i].Value2 = ((MP)_Trans2[2]).ReadDouble();
-                                                    if (Key.Trans[i].Type >= 3 && !(_Trans2[3].GetType() != typeof(MP)))
+                                                    if (Key.Trans[i].Type >= 3 && _Trans2[3].GetType() == typeof(MP))
                                                         Key.Trans[i].Value3 = ((MP)_Trans2[3]).ReadDouble();
                                                 }
                                             }
@@ -2540,21 +2534,13 @@ namespace KKtLib.A3DA
                     Keys.Add("Pre", Key.EPTypePre);
                 if (Key.Max.HasValue)
                     Keys.Add("M", Key.Max);
+                if (Key.RawData.Boolean)
+                    Keys.Add("RD", Key.RawData.Boolean);
                 if (Key.Length.HasValue)
                 {
                     MP Trans = new MP("Trans", Key.Trans.Length);
                     for (int i = 0; i < Key.Trans.Length; i++)
                     {
-                        if (Key.Trans[i].Value3 == 0.0)
-                        {
-                            Key.Trans[i].Type = 2;
-                            if (Key.Trans[i].Value2 == 0.0)
-                            {
-                                Key.Trans[i].Type = 1;
-                                if (Key.Trans[i].Value1 == 0.0)
-                                    Key.Trans[i].Type = 0;
-                            }
-                        }
                         MP K = new MP(Key.Trans[i].Type + 1);
                         K[0] = Key.Trans[i].Frame;
                         if (Key.Trans[i].Type > 0)
@@ -2792,6 +2778,7 @@ namespace KKtLib.A3DA
 
         public class RawD
         {
+            public bool Boolean;
             public int? KeyType;
             public int? ValueListSize;
             public string ValueType;
@@ -2799,7 +2786,7 @@ namespace KKtLib.A3DA
             public string[] ValueList;
 
             public RawD()
-            { KeyType = null; ValueListSize = null; ValueType = "float";
+            { Boolean = false; KeyType = null; ValueListSize = null; ValueType = "float";
                 ValueListString = null; ValueList = null; }
         }
 

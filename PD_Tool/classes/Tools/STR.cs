@@ -11,16 +11,14 @@ namespace PD_Tool.Tools
 {
     public class STR
     {
-        public static STRa[] Data = new STRa[KKtMain.NumWorkers];
-
         public static void Processor()
         {
             Console.Title = "PD_Tool: Converter Tools: STR Converter";
             KKtMain.Choose(1, "str", out string[] FileNames);
 
+            STRa Data = new STRa();
             foreach (string file in FileNames)
             {
-                ref STRa Data = ref STR.Data[0];
                 Data = new STRa { filepath = file.Replace(Path.
                     GetExtension(file), ""), ext = Path.GetExtension(file) };
 
@@ -51,10 +49,11 @@ namespace PD_Tool.Tools
         }
 
         public STRa()
-        { }
+        { Count = 0; Offset = 0; OffsetX = 0; STR = null; POF = null; Header = null; filepath = null; ext = null; }
 
         public long Count;
         public long Offset;
+        public long OffsetX;
         public List<String> STR;
         public KKtMain.POF POF;
         public KKtMain.Header Header;
@@ -64,7 +63,6 @@ namespace PD_Tool.Tools
 
         public int STRReader()
         {
-            new STRa { Header = new KKtMain.Header() };
             KKtIO reader =  KKtIO.OpenReader(filepath + ext);
 
             reader.Format = KKtMain.Format.F;
@@ -74,12 +72,20 @@ namespace PD_Tool.Tools
                 Header = reader.ReadHeader(true);
                 STR = new List<String>();
                 POF = KKtMain.AddPOF(Header);
-                reader.Seek(Header.Lenght, 0);
-
+                reader.Position = Header.Lenght;
+                
                 Count = reader.ReadInt32Endian();
                 Offset = reader.ReadInt32Endian();
-                reader.Seek(Offset, 0);
-                
+                if (Offset == 0)
+                {
+                    Offset = Count;
+                    OffsetX = reader.ReadInt64();
+                    Count  = reader.ReadInt64();
+                    reader.XOffset = Header.Lenght;
+                    reader.Format = KKtMain.Format.X;
+                }
+                reader.LongPosition = reader.IsX ? Offset + reader.XOffset : Offset;
+
                 for (int i = 0; i < Count; i++)
                 {
                     String Str = new String
@@ -87,11 +93,13 @@ namespace PD_Tool.Tools
                         StrOffset = reader.GetOffset(ref POF).ReadInt32Endian(),
                         ID = reader.ReadInt32Endian()
                     };
+                    if (reader.IsX)
+                        Str.StrOffset += (int)OffsetX;
                     STR.Add(Str);
                 }
                 for (int i = 0; i < Count; i++)
                 {
-                    reader.LongPosition = STR[i].StrOffset;
+                    reader.LongPosition = STR[i].StrOffset + (reader.IsX ? reader.XOffset : 0);
                     STR[i] = new String { ID = STR[i].ID, Str = KKtText.
                         ToUTF8(reader.NullTerminated()), StrOffset = STR[i].StrOffset};
                 }
@@ -103,9 +111,9 @@ namespace PD_Tool.Tools
                 reader.Seek(-4, (SeekOrigin)1);
                 int i = 0;
                 STR = new List<String>();
-                while (true)
+                while (reader.LongPosition > 0 && reader.LongPosition < reader.LongLength)
                 {
-                    int a = reader.ReadInt32Endian(true);
+                    int a = reader.ReadInt32();
                     if (a != 0)
                     {
                         reader.Seek(-4, (SeekOrigin)1);
@@ -126,22 +134,20 @@ namespace PD_Tool.Tools
         {
             uint Offset = 0;
             uint CurrentOffset = 0;
-            KKtIO writer = KKtIO.OpenWriter(filepath + ((int)Header.Format > 1 ? ".str" : ".bin"), true);
+            KKtIO writer = KKtIO.OpenWriter(filepath + ((int)Header.Format > 5 ? ".str" : ".bin"), true);
             writer.Format = Header.Format;
             POF = new KKtMain.POF { Offsets = new List<int>(), POFOffsets = new List<long>() };
-            writer.IsBE = (int)writer.Format == 3;
+            writer.IsBE = writer.Format == KKtMain.Format.F2BE;
 
             if ((int)writer.Format > 1)
             {
                 writer.Seek(0x40, 0);
                 writer.WriteEndian(Count);
-                writer.GetOffset(ref POF);
-                writer.WriteEndian(0x80);
+                writer.GetOffset(ref POF).WriteEndian(0x80);
                 writer.Seek(0x80, 0);
                 for (int i = 0; i < STR.Count; i++)
                 {
-                    writer.GetOffset(ref POF);
-                    writer.Write(0x00);
+                    writer.GetOffset(ref POF).Write(0x00);
                     writer.WriteEndian(STR[i].ID);
                 }
                 writer.Align(16);
@@ -174,7 +180,7 @@ namespace PD_Tool.Tools
                     writer.Write(STR[i1].Str + "\0");
                 }
             }
-            if ((int)writer.Format > 1)
+            if (writer.Format > KKtMain.Format.F)
             {
                 writer.Align(16);
                 Offset = (uint)writer.Position;
@@ -185,11 +191,11 @@ namespace PD_Tool.Tools
             for (int i1 = 0; i1 < Count; i1++)
             {
                 writer.WriteEndian(STRPos[i1]);
-                if ((int)writer.Format > 1)
+                if (writer.Format > KKtMain.Format.F)
                     writer.Seek(4, (SeekOrigin)1);
             }
 
-            if ((int)writer.Format > 1)
+            if (writer.Format > KKtMain.Format.F)
             {
                 writer.Seek(Offset, 0);
                 writer.Write(ref POF, 1);
@@ -197,7 +203,7 @@ namespace PD_Tool.Tools
                 writer.WriteEOFC(0);
                 Header.IsBE = writer.IsBE;
                 Header.Lenght = 0x40;
-                Header.DataSize = (int)(CurrentOffset - 0x40);
+                Header.DataSize = (int)(CurrentOffset - Header.Lenght);
                 Header.Signature = 0x41525453;
                 Header.SectionSize = (int)(Offset - Header.Lenght);
                 writer.Seek(0, 0);
@@ -208,7 +214,6 @@ namespace PD_Tool.Tools
 
         public void XMLReader()
         {
-            new STRa { Header = new KKtMain.Header() };
             STR = new List<String>();
 
             KKtXml Xml = new KKtXml();
@@ -227,10 +232,8 @@ namespace PD_Tool.Tools
                         String Str = new String();
                         foreach (XAttribute Entry in STREntry.Attributes())
                         {
-                            if (Entry.Name == "ID")
-                                Str.ID = int.Parse(Entry.Value);
-                            if (Entry.Name == "String")
-                                Str.Str = Entry.Value;
+                            if (Entry.Name == "ID"    ) Str.ID  = int.Parse(Entry.Value);
+                            if (Entry.Name == "String") Str.Str =           Entry.Value ;
                         }
                         STR.Add(Str);
                     }
@@ -243,8 +246,6 @@ namespace PD_Tool.Tools
         public void XMLWriter()
         {
             KKtXml Xml = new KKtXml();
-            if (File.Exists(filepath + ".xml"))
-                File.Delete(filepath + ".xml");
             XElement STR_ = new XElement("STR");
             Xml.Compact = true;
             Xml.Writer(STR_, Header.Format.ToString(), "Format");
@@ -252,11 +253,14 @@ namespace PD_Tool.Tools
             {
                 XElement STREntry = new XElement("STREntry");
                 Xml.Writer(STREntry, STR[i0].ID, "ID");
-                if (STR[i0].Str != "")
-                     Xml.Writer(STREntry, STR[i0].Str, "String");
+                if (STR[i0].Str != null)
+                    if (STR[i0].Str != "")
+                        Xml.Writer(STREntry, STR[i0].Str, "String");
                 STR_.Add(STREntry);
             }
             Xml.doc.Add(STR_);
+            if (File.Exists(filepath + ".xml"))
+                File.Delete(filepath + ".xml");
             Xml.SaveXml(filepath + ".xml");
         }
     }

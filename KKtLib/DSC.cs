@@ -248,24 +248,24 @@ namespace KKtLib
             return 0;
         }
 
-        public Format GetType(int Signature)
+        public KKtMain.Format GetType(int Signature)
         {
             switch (Signature)
             {
                 case 0x00000000:
-                    return Format.DT;
+                    return KKtMain.Format.DT;
                 case 0x10120116:
                 case 0x11021719:
                 case 0x11032818:
                 case 0x11062018:
-                    return Format.DT2;
+                    return KKtMain.Format.DT2;
                 case 0x12020220:
-                    return Format.F;
+                    return KKtMain.Format.F;
                 case 0x13120420:
                     if (!IsX)
-                        return Format.F2LE;
+                        return KKtMain.Format.F2LE;
                     else
-                        return Format.X;
+                        return KKtMain.Format.X;
                 case 0x13013121:
                 case 0x13081522:
                 case 0x13122519:
@@ -275,23 +275,11 @@ namespace KKtLib
                 case 0x15021718:
                 case 0x15122517:
                 case 0x16030121:
-                    return Format.FT;
+                    return KKtMain.Format.FT;
                 case 0x20041213:
-                    return Format.F2BE;
+                    return KKtMain.Format.F2BE;
             }
-            return Format.NULL;
-        }
-
-        public enum Format
-        {
-            NULL,
-            DT  ,
-            DT2 ,
-            F   ,
-            F2LE,
-            F2BE,
-            FT  ,
-            X   ,
+            return KKtMain.Format.NULL;
         }
 
         public void DSCWriter(string filebase)

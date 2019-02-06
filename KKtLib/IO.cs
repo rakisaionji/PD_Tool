@@ -166,19 +166,25 @@ namespace KKtLib
         { if (UTF8) Write(Text.ToUTF8(val.ToString())); else Write(Text.ToASCII(val.ToString())); }
         public void Write(string val, bool UTF8)
         { if (UTF8) Write(Text.ToUTF8(val));            else Write(Text.ToASCII(val)); }
-        public void Write(string Data, ref bool val)
+
+        public void Write(string Data, ref bool  val)
         {           Write(Text.ToUTF8(Data + val.ToString().ToLower() + "\n")); }
         public void Write(string Data,     long? val)
         { if (val != null)
                     Write(Text.ToUTF8(Data + val + "\n")); }
         public void Write(string Data,   double? val)
         { if (val != null)
-                    Write(Text.ToUTF8(Data + Main.ToString(val) + "\n")); }
-        public void Write(string Data,     long val)
+                    Write(Text.ToUTF8(Data + Main.ToString(val        ) + "\n")); }
+        public void Write(string Data,   double? val, byte round)
+        { if (val != null)
+                    Write(Text.ToUTF8(Data + Main.ToString(val, round) + "\n")); }
+        public void Write(string Data,     long  val)
         {           Write(Text.ToUTF8(Data + val + "\n")); }
-        public void Write(string Data,   double val)
-        {           Write(Text.ToUTF8(Data + Main.ToString(val) + "\n")); }
-        public void Write(string Data,   string val)
+        public void Write(string Data,   double  val)
+        {           Write(Text.ToUTF8(Data + Main.ToString(val       ) + "\n")); }
+        public void Write(string Data,   double  val, byte round)
+        {           Write(Text.ToUTF8(Data + Main.ToString(val       ) + "\n")); }
+        public void Write(string Data,   string  val)
         { if (val != null) if (val != "")
                     Write(Text.ToUTF8(Data + val + "\n")); }
 

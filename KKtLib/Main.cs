@@ -75,6 +75,10 @@ namespace KKtLib
                         ofd.Filter = "BON files (*.bon, *.bin, *.xml)|*.bon;*.bin;*.xml|BON files " +
                             "(*.bon)|*.bon|BIN files (*.bin)|*.bin|XML files (*.xml)|*.xml";
                         break;
+                    case "dex":
+                        ofd.Filter = "DEX files (*.dex, *.bin, *.xml)|*.dex;*.bin;*.xml|DEX files " +
+                            "(*.dex)|*.dex|BIN files (*.bin)|*.bin|XML files (*.xml)|*.xml";
+                        break;
                     case "diva":
                         ofd.Filter = "DIVA files (*.diva, *.wav)|*.diva;*.wav|DIVA files " +
                             "(*.diva)|*.diva|WAV files (*.wav)|*.wav";
@@ -411,7 +415,7 @@ namespace KKtLib
             public ushort Format;
         }
 
-        public struct Header
+        public class Header
         {
             public bool IsX;
             public bool IsBE;
@@ -439,7 +443,7 @@ namespace KKtLib
             MGF  = 10,
         }
 
-        public struct POF
+        public class POF
         {
             public byte Type;
             public int Lenght;

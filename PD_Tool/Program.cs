@@ -141,8 +141,9 @@ namespace PD_Tool
                     KKtMain.ConsoleDesign("                 Choose tool:");
                     KKtMain.ConsoleDesign(false);
                     KKtMain.ConsoleDesign("1. A3DA Converter");
-                    KKtMain.ConsoleDesign("2. DSC Converter");
-                    KKtMain.ConsoleDesign("3. STR Converter");
+                    KKtMain.ConsoleDesign("2. DEX Converter");
+                    KKtMain.ConsoleDesign("3. DSC Converter");
+                    KKtMain.ConsoleDesign("4. STR Converter");
                     KKtMain.ConsoleDesign(false);
                     KKtMain.ConsoleDesign(true);
                     Console.WriteLine();
@@ -154,9 +155,12 @@ namespace PD_Tool
                             Tools.A3D.Processor();
                             break;
                         case "2":
-                            DSC.Main.Processor();
+                            Tools.DEX.Processor();
                             break;
                         case "3":
+                            DSC.Main.Processor();
+                            break;
+                        case "4":
                             Tools.STR.Processor();
                             break;
                     }

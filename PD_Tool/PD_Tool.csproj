@@ -38,6 +38,7 @@
     <Compile Include="classes\DB\Auth.cs" />
     <Compile Include="classes\DB\DataBase.cs" />
     <Compile Include="classes\Tools\A3D.cs" />
+    <Compile Include="classes\Tools\DEX.cs" />
     <Compile Include="classes\Tools\STR.cs" />
     <Compile Include="classes\DIVAFILE.cs" />
     <Compile Include="classes\FARC.cs" />
